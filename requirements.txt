@@ -1,0 +1,4 @@
+black
+isort
+pylint
+gradio==4.44.1
