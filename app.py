@@ -1,7 +1,6 @@
 """Main application for the MarqetSim interface."""
 
 import gradio as gr
-from utils.config import Config
 from tinytroupe.agent import TinyPerson
 from tinytroupe.examples import (
     create_lisa_the_data_scientist,
@@ -17,12 +16,24 @@ def get_simulation(situation, agent_name, options):
     agent_name = agent_name.strip()
     options = options.strip()
 
-    if agent_name == "Lisa the data scientist":
-        agent = create_lisa_the_data_scientist()
-    elif agent_name == "Oscar the architect":
-        agent = create_oscar_the_architect()
-    elif agent_name == "Marcos the physician":
-        agent = create_marcos_the_physician()
+    if agent_name == "Lisa":
+        agent = (
+            TinyPerson.all_agents["Lisa"]
+            if TinyPerson.has_agent("Lisa")
+            else create_lisa_the_data_scientist()
+        )
+    elif agent_name == "Oscar":
+        agent = (
+            TinyPerson.all_agents["Oscar"]
+            if TinyPerson.has_agent("Oscar")
+            else create_oscar_the_architect()
+        )
+    elif agent_name == "Marcos":
+        agent = (
+            TinyPerson.all_agents["Marcos"]
+            if TinyPerson.has_agent("Marcos")
+            else create_marcos_the_physician()
+        )
 
     agent.change_context(situation)
     result = agent.listen_and_act(options, return_actions=True)
@@ -33,91 +44,57 @@ def get_simulation(situation, agent_name, options):
 
 
 with gr.Blocks(
-    title="MarqetSim - An LLM Simulation based for product discovery.",
+    title="MarqetSim - An LLM Agent Simulation based for Online Advertising.",
     analytics_enabled=True,
 ) as demo:
     gr.Markdown("# MarqetSim: A simulation based for product discovery.")
-    gr.Markdown("Demo - Online Advertisement Evaluation for TVs")
-    gr.Markdown("## Example for Advertisement for TV.")
-    gr.Markdown("### Situation")
-    gr.Markdown(
-        """
-        ```
-        Your TV broke and you need a new one. You search for a new TV on Bing.
-        ```
-        """
-    )
-    gr.Markdown("### Agents")
-    gr.Markdown(
-        """
-        ```
-        Lisa the data scientist
-        ```
-        """
-    )
-    gr.Markdown("### Options")
-    gr.Markdown(
-        """
-        ```
-        Can you evaluate these Bing ads for me? Which one convices you more to buy their particular offering? 
-        Select **ONLY** one. Please explain your reasoning, based on your financial situation, background and personality.
+    gr.Markdown("Demo - Online Advertisement Evaluation for Online Travel Agents")
 
-        # AD 1
+    with gr.Row():
+        with gr.Column():
+            agent = gr.Dropdown(
+                [
+                    "Lisa",
+                    "Oscar",
+                    "Marcos",
+                ],
+                label="Agent",
+                info="Pick the agent you want to simulate.",
+            )
+            situation = gr.Textbox(label="Situation", info="Describe agent situation")
+            options = gr.Textbox(
+                label="Options", info="Enter the options you want to simulate."
+            )
+            greet_btn = gr.Button("Simulate")
 
-        The Best TV Of Tomorrow - LG 4K Ultra HD TV
-        https://www.lg.com/tv/oled
-        AdThe Leading Name in Cinematic Picture. Upgrade Your TV to 4K OLED And See The Difference. It's Not Just OLED, It's LG OLED. Exclusive a9 Processor, Bringing Cinematic Picture Home.
+        with gr.Column():
+            output = gr.Textbox(label="Results")
 
-        Infinite Contrast · Self-Lighting OLED · Dolby Vision™ IQ · ThinQ AI w/ Magic Remote
-
-        Free Wall Mounting Deal
-        LG G2 97" OLED evo TV
-        Free TV Stand w/ Purchase
-        World's No.1 OLED TV
-
-        # AD 2
-
-        The Full Samsung TV Lineup - Neo QLED, OLED, 4K, 8K & More
-        https://www.samsung.com
-        AdFrom 4K To 8K, QLED To OLED, Lifestyle TVs & More, Your Perfect TV Is In Our Lineup. Experience Unrivaled Technology & Design In Our Ultra-Premium 8K & 4K TVs.
-
-        Discover Samsung Event · Real Depth Enhancer · Anti-Reflection · 48 mo 0% APR Financing
-
-        The 2023 OLED TV Is Here
-        Samsung Neo QLED 4K TVs
-        Samsung Financing
-        Ranked #1 By The ACSI®
-
-        # AD 3
-
-        Wayfair 55 Inch Tv - Wayfair 55 Inch Tv Décor
-        Shop Now
-        https://www.wayfair.com/furniture/free-shipping
-        AdFree Shipping on Orders Over $35. Shop Furniture, Home Décor, Cookware & More! Free Shipping on All Orders Over $35. Shop 55 Inch Tv, Home Décor, Cookware & More!
-
-        ``` 
-        """
-    )
-    gr.Markdown("## Situation")
-    gr.Markdown(
-        "Your TV broke and you need a new one. You search for a new TV on Bing."
-    )
-    gr.Markdown("## Profile")
-    gr.Markdown("Lisa the data scientist")
-
-    situation = gr.Textbox(label="Situation", info="Describe agent situation")
-    agent = gr.Dropdown(
-        ["Lisa the data scientist", "Oscar the architect", "Marcos the physician"],
-        label="Agent",
-        info="Pick the agent you want to simulate.",
-    )
-    options = gr.Textbox(
-        label="Options", info="Enter the options you want to simulate."
+    gr.Examples(
+        examples=[
+            [
+                "Lisa",
+                "Long holiday is near, you want to book your vacation, you see ads on OTA.",
+                "Can you evaluate these vacation ads for me? Which one convices you more to go for vacation. Select **ONLY** one. Please explain your reasoning, based on your financial situation, background and personality.\n#Ad 1 - Bali, Sunset Beach, Surfing, and Night Club \n#Ad 2 - Yogyakarta, traditional arts and cultural heritage \n#Ad 3 - Bandung, large city set amid volcanoes and tea plantations",
+            ],
+            [
+                "Oscar",
+                "Long holiday is near, you want to book your vacation, you see ads on OTA.",
+                "Can you evaluate these vacation ads for me? Which one convices you more to go for vacation. Select **ONLY** one. Please explain your reasoning, based on your financial situation, background and personality.\n#Ad 1 - Bali, Sunset Beach, Surfing, and Night Club \n#Ad 2 - Yogyakarta, traditional arts and cultural heritage \n#Ad 3 - Bandung, large city set amid volcanoes and tea plantations",
+            ],
+            [
+                "Marcos",
+                "Long holiday is near, you want to book your vacation, you see ads on OTA.",
+                "Can you evaluate these vacation ads for me? Which one convices you more to go for vacation. Select **ONLY** one. Please explain your reasoning, based on your financial situation, background and personality.\n#Ad 1 - Bali, Sunset Beach, Surfing, and Night Club \n#Ad 2 - Yogyakarta, traditional arts and cultural heritage \n#Ad 3 - Bandung, large city set amid volcanoes and tea plantations",
+            ],
+        ],
+        inputs=[agent, situation, options],
+        outputs=[output],
+        fn=get_simulation,
+        cache_examples=False,
+        label="Try examples",
     )
 
-    output = gr.Textbox(label="Results")
-
-    greet_btn = gr.Button("Simulate")
     greet_btn.click(
         fn=get_simulation,
         inputs=[situation, agent, options],
