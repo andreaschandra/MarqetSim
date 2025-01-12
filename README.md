@@ -8,7 +8,7 @@ MarqetSim serves as the front-end application for TinyTroupe, offering a visual 
 
 ## Features
 
-- To Do
+- UI for Run Simulation
 
 ## Getting Started
 
