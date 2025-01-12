@@ -10,4 +10,6 @@ COPY . /app
 
 RUN pip install -r requirements.txt
 
-CMD ["python", "interface/app.py"]
+RUN pip install git+https://github.com/andreaschandra/TinyTroupeOllama.git@main --no-dependencies
+
+CMD ["python", "app.py"]
