@@ -47,7 +47,7 @@ with gr.Blocks(
     title="MarqetSim - An LLM Agent Simulation based for Online Advertising.",
     analytics_enabled=True,
 ) as demo:
-    gr.Markdown("# MarqetSim: A simulation based for product discovery.")
+    gr.Markdown("# MarqetSim: A simulation based for Online Advertising.")
     gr.Markdown("Demo - Online Advertisement Evaluation for Online Travel Agents")
 
     with gr.Row():
