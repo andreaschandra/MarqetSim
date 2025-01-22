@@ -56,8 +56,7 @@ def get_simulation(situation, agent_name, options, adjustable, adjustment_config
     return result[-2]["action"]["content"].strip()
 
 
-def toggle_slider(agent, n_configs):
-    # Show the slider only if an agent is selected
+def show_config_toggle(agent, n_configs):
     if agent:
         return [gr.update(visible=True)] * n_configs
     return [gr.update(visible=False)] * n_configs
@@ -117,7 +116,7 @@ with gr.Blocks(
             agent_adjustment = gr.JSON(visible=False)
 
             agent_config_bool.change(
-                toggle_slider,
+                show_config_toggle,
                 inputs=[
                     agent_config_bool,
                     gr.Number(len(config_boxes), visible=False),
