@@ -144,17 +144,32 @@ with gr.Blocks(
             [
                 "Lisa",
                 "Long holiday is near, you want to book your vacation, you see ads on OTA.",
-                "Can you evaluate these vacation ads for me? Which one convices you more to go for vacation. Select **ONLY** one. Please explain your reasoning, based on your financial situation, background and personality.\n#Ad 1 - Bali, Sunset Beach, Surfing, and Night Club \n#Ad 2 - Yogyakarta, traditional arts and cultural heritage \n#Ad 3 - Bandung, large city set amid volcanoes and tea plantations",
+                """Can you evaluate these vacation ads for me? Which one convices you more
+                to go for vacation. Select **ONLY** one. Please explain your reasoning, 
+                based on your financial situation, background and personality.
+                #Ad 1 - Bali, Sunset Beach, Surfing, and Night Club 
+                #Ad 2 - Yogyakarta, traditional arts and cultural heritage 
+                #Ad 3 - Bandung, large city set amid volcanoes and tea plantations""",
             ],
             [
                 "Oscar",
                 "Long holiday is near, you want to book your vacation, you see ads on OTA.",
-                "Can you evaluate these vacation ads for me? Which one convices you more to go for vacation. Select **ONLY** one. Please explain your reasoning, based on your financial situation, background and personality.\n#Ad 1 - Bali, Sunset Beach, Surfing, and Night Club \n#Ad 2 - Yogyakarta, traditional arts and cultural heritage \n#Ad 3 - Bandung, large city set amid volcanoes and tea plantations",
+                """Can you evaluate these vacation ads for me? Which one convices you more
+                to go for vacation. Select **ONLY** one. Please explain your reasoning, 
+                based on your financial situation, background and personality.
+                #Ad 1 - Bali, Sunset Beach, Surfing, and Night Club 
+                #Ad 2 - Yogyakarta, traditional arts and cultural heritage 
+                #Ad 3 - Bandung, large city set amid volcanoes and tea plantations""",
             ],
             [
                 "Marcos",
                 "Long holiday is near, you want to book your vacation, you see ads on OTA.",
-                "Can you evaluate these vacation ads for me? Which one convices you more to go for vacation. Select **ONLY** one. Please explain your reasoning, based on your financial situation, background and personality.\n#Ad 1 - Bali, Sunset Beach, Surfing, and Night Club \n#Ad 2 - Yogyakarta, traditional arts and cultural heritage \n#Ad 3 - Bandung, large city set amid volcanoes and tea plantations",
+                """Can you evaluate these vacation ads for me? Which one convices you more
+                to go for vacation. Select **ONLY** one. Please explain your reasoning, 
+                based on your financial situation, background and personality.
+                #Ad 1 - Bali, Sunset Beach, Surfing, and Night Club 
+                #Ad 2 - Yogyakarta, traditional arts and cultural heritage 
+                #Ad 3 - Bandung, large city set amid volcanoes and tea plantations""",
             ],
         ],
         inputs=[agent, situation, options],
