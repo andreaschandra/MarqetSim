@@ -11,7 +11,7 @@ from tinytroupe.examples import (
 )
 
 
-def get_simulation(situation, agent_name, options, adjustment):
+def get_simulation(situation, agent_name, options, adjustable, adjustment_config):
 
     situation = situation.strip()
     agent_name = agent_name.strip()
@@ -43,30 +43,48 @@ def get_simulation(situation, agent_name, options, adjustment):
             else create_lisa_the_data_scientist()
         )
 
-    for opt in adjustment:
-        agent_sim.define(opt, adjustment[opt])
+    # for opt in adjustment:
+    if adjustable:
+        for opt in adjustment_config:
+            agent_sim.define(opt, adjustment_config[opt])
 
     agent_sim.change_context(situation)
     result = agent_sim.listen_and_act(options, return_actions=True)
 
     print(f"\n\n result: {result[-2]['action']['content']}")
-    print(adjustment)
-    print(agent_sim._configuration["age"])
 
     return result[-2]["action"]["content"].strip()
 
 
-def get_adjustment_config(age_opt):
-    print("Get Adjustment")
-    conf = {"age": age_opt}
-    return conf
-
-
-def toggle_slider(agent):
+def toggle_slider(agent, n_configs):
     # Show the slider only if an agent is selected
     if agent:
-        return gr.update(visible=True)
-    return gr.update(visible=False)
+        return [gr.update(visible=True)] * n_configs
+    return [gr.update(visible=False)] * n_configs
+
+
+def set_agent_config_boxes():
+    age_opt = gr.Slider(
+        minimum=15,
+        maximum=60,
+        label="Age",
+        interactive=True,
+        visible=False,
+        value=17,
+        step=1,
+    )
+
+    nationality_opt = gr.Dropdown(
+        ["Indonesian", "Malaysian", "Singaporean", "Canadian", "Brazilian"],
+        label="Nationality",
+        visible=False,
+    )
+    return [age_opt, nationality_opt]
+
+
+def set_config_as_json(age, nationality):
+    config_json = {"age": age, "nationality": nationality}
+    return config_json
 
 
 with gr.Blocks(
@@ -92,23 +110,34 @@ with gr.Blocks(
                 label="Options", info="Enter the options you want to simulate."
             )
 
-            age_opt = gr.Slider(
-                minimum=15,
-                maximum=60,
-                label="Age Slider",
-                interactive=True,
-                visible=False,
-            )
-            agent.change(toggle_slider, inputs=agent, outputs=age_opt)
-
+            # Agent Config
             # nationality, occupation, gender
+            agent_config_bool = gr.Checkbox(label="Configure the agent")
+            config_boxes = set_agent_config_boxes()
+            agent_adjustment = gr.JSON(visible=False)
+
+            agent_config_bool.change(
+                toggle_slider,
+                inputs=[
+                    agent_config_bool,
+                    gr.Number(len(config_boxes), visible=False),
+                ],
+                outputs=config_boxes,
+            )
+
+            agent_config_bool.change(
+                set_config_as_json,
+                inputs=config_boxes,
+                outputs=agent_adjustment,
+            )
+
             greet_btn = gr.Button("Simulate")
 
         with gr.Column():
             output = gr.Textbox(
                 value="The agent opinion about the ads will be shown here.",
                 label="Results",
-                lines=25,
+                lines=17,
             )
 
     gr.Examples(
@@ -136,17 +165,9 @@ with gr.Blocks(
         label="Try examples",
     )
 
-    # agent_adjustment = gr.JSON()
-    # gr.Interface(
-    #     fn=get_adjustment_config,
-    #     inputs=age_opt,
-    #     outputs=agent_adjustment,  # Output the JSON-like object
-    # )
-    # print(type(agent_adjustment))
-
     greet_btn.click(
         fn=get_simulation,
-        inputs=[situation, agent, options],
+        inputs=[situation, agent, options, agent_config_bool, agent_adjustment],
         outputs=output,
         api_name="get_simulation",
     )
@@ -154,8 +175,3 @@ with gr.Blocks(
 
 if __name__ == "__main__":
     demo.launch()
-
-
-# Lisa : Bali, Jogja
-# Oscar : Jogja, Jogja
-# Marcos : Jogja
