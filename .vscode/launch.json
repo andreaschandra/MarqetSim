@@ -15,7 +15,6 @@
                 "CONDA_DEFAULT_ENV": "marq",
                 "PATH": "/Users/alamhanz/miniconda3/envs/marq/bin:${env:PATH}",
                 "DATALAKE_BUCKET_NAME":"roms-analytics-datalake",
-                "OPENAI_API_KEY":"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"
             },
         }
     ]
