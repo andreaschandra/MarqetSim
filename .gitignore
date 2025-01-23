@@ -1,4 +1,4 @@
 .codegpt
 .env*
 .tox/
-.vscode/
+.vscode/*
