@@ -14,7 +14,6 @@
             "env": {
                 "CONDA_DEFAULT_ENV": "marq",
                 "PATH": "/Users/alamhanz/miniconda3/envs/marq/bin:${env:PATH}",
-                "DATALAKE_BUCKET_NAME":"roms-analytics-datalake",
             },
         }
     ]
