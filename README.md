@@ -40,7 +40,7 @@ pip install -r requirements.txt
 
 To start the development server:
 ```
-python interface/app.py
+python app.py
 ```
 
 It will show something like

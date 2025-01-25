@@ -1,3 +1,5 @@
 .codegpt
 .env*
 .tox/
+.vscode/*
+launch.json
