@@ -1,7 +1,5 @@
 """Main application for the MarqetSim interface."""
 
-import logging
-
 import gradio as gr
 from tinytroupe.agent import TinyPerson
 from tinytroupe.examples import (
@@ -12,6 +10,18 @@ from tinytroupe.examples import (
 
 
 def get_simulation(situation, agent_name, options, adjustable, adjustment_config):
+    """Get simulation
+
+    Args:
+        situation (str): situation for agents
+        agent_name (str): agent name
+        options (str): options for agents
+        adjustable (bool): checkbox
+        adjustment_config (list): list of configurable adjustments
+
+    Returns:
+        str: result of the simulation
+    """
 
     situation = situation.strip()
     agent_name = agent_name.strip()
@@ -57,12 +67,26 @@ def get_simulation(situation, agent_name, options, adjustable, adjustment_config
 
 
 def show_config_toggle(agent, n_configs):
+    """Show config toggle
+
+    Args:
+        agent (bool): if agent is True
+        n_configs (int): total configurables
+
+    Returns:
+        list: list of configurations
+    """
     if agent:
         return [gr.update(visible=True)] * n_configs
     return [gr.update(visible=False)] * n_configs
 
 
 def set_agent_config_boxes():
+    """Set agent config
+
+    Returns:
+        list: age_opt, nationality_opt
+    """
     age_opt = gr.Slider(
         minimum=15,
         maximum=60,
@@ -82,6 +106,15 @@ def set_agent_config_boxes():
 
 
 def set_config_as_json(age, nationality):
+    """Set config as json
+
+    Args:
+        age (int): agent age
+        nationality (str): agent nationality
+
+    Returns:
+        _type_: _description_
+    """
     config_json = {"age": age, "nationality": nationality}
     return config_json
 
