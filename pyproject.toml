@@ -1,0 +1,39 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+packages = ["marqetsim"]
+include-package-data = true
+
+[project]
+name = "marqetsim"
+version = "0.0.1"
+authors = [
+  { name="Andreas Chandra", email="andreas@jakartaresearch.com" }
+]
+description = "LLM-based agent for market research."
+readme = "README.md"
+requires-python = ">=3.10"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+
+dependencies = [
+    "pandas", 
+    "pytest",                      
+    "openai >= 1.40", 
+    "tiktoken",
+    "msal",
+    "rich", "requests", "chevron",
+    "llama-index", "llama-index-embeddings-huggingface", "llama-index-readers-web",
+    "pypandoc", "docx", "markdown",
+    "jupyter",
+    "pydantic"
+]
+
+[project.urls]
+"Homepage" = "https://github.com/andreaschandra/marqetsim"
+
