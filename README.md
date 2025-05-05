@@ -9,8 +9,9 @@ MarqetSim serves as the front-end application for TinyTroupe, offering a visual 
 ## Features
 
 - UI for Run Simulation
+- CLI capability
 
-## Getting Started
+## Getting Started for UI
 
 ### Prerequisites
 
@@ -48,4 +49,11 @@ It will show something like
 Running on local URL:  http://127.0.0.1:7860
 
 To create a public link, set `share=True` in `launch()`.
+```
+
+## Getting Started for CLI
+
+run this (using uv framework)
+```
+uv pip install -e .
 ```
