@@ -5,3 +5,4 @@
 .idea/
 launch.json
 *.egg-info
+.env
