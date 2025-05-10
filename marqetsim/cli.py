@@ -25,7 +25,7 @@ def read_file(file_path):
 
 @click.command()
 @click.argument('file_path', type=click.Path(exists=True))
-def cli(file_path):
+def launch(file_path):
     """Read a YAML or JSON file and print it as a dictionary."""
     try:
         data = read_file(file_path)
@@ -40,7 +40,7 @@ def cli(file_path):
         all_response = {}
         for person in people:
             person.change_context(situation)
-            all_response[people.name] = person.listen_and_act(request_msg)
+            all_response[person.name] = person.listen_and_act(request_msg)
 
         click.echo(data.pop('project'))
 
