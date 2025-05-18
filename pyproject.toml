@@ -8,7 +8,7 @@ include-package-data = true
 
 [project]
 name = "marqetsim"
-version = "0.0.1"
+version = "0.1.0"
 authors = [
   { name="Andreas Chandra", email="andreas@jakartaresearch.com" }
 ]
