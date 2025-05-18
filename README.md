@@ -20,31 +20,33 @@ MarqetSim serves as the front-end application for TinyTroupe, offering a visual 
 ### Installation
 
 1. Clone the repository:
+
 ```
 git clone git@github.com>:andreaschandra/MarqetSim.git
 ```
 
-
 2. Navigate to the project directory:
+
 ```
 cd MarQetSim
 ```
 
-
 3. Install dependencies:
+
 ```
 pip install -r requirements.txt
 ```
 
-
 ### Running the Application
 
 To start the development server:
+
 ```
 python app.py
 ```
 
 It will show something like
+
 ```
 Running on local URL:  http://127.0.0.1:7860
 
@@ -54,6 +56,14 @@ To create a public link, set `share=True` in `launch()`.
 ## Getting Started for CLI
 
 run this (using uv framework)
+
 ```
 uv pip install -e .
+```
+
+run sample experiment
+
+```
+marq agents/situations/test-situation-1.yaml
+
 ```
