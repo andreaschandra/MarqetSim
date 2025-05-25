@@ -438,6 +438,9 @@ disable=raw-checker-failed,
         use-implicit-booleaness-not-comparison-to-zero,
         redefined-outer-name,
         no-member,
+        logging-not-lazy,
+        logging-fstring-interpolation,
+        broad-exception-caught
         
 
 # Enable the message, report, category or checker with the given id(s). You can

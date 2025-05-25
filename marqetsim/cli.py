@@ -3,10 +3,7 @@ import json
 import yaml
 from pathlib import Path
 
-from tinytroupe.examples import (
-    create_lisa_the_data_scientist,
-    create_oscar_the_architect,
-)
+from marqetsim.examples import create_joe_the_analyst
 
 
 def read_file(file_path):
@@ -38,10 +35,10 @@ def launch(file_path):
             f"#option-{i+1} " + opt.pop("content") for i, opt in enumerate(options)
         ]
         request_msg = f"{questions}\n" + "\n\n".join(options_merged)
-        people = [create_oscar_the_architect(), create_lisa_the_data_scientist()]
+        people = [create_joe_the_analyst()]
         all_response = {}
         for person in people:
-            person.change_context(situation)
+            person.set_context(situation)
             all_response[person.name] = person.listen_and_act(request_msg)
 
         click.echo(data.pop("project"))
