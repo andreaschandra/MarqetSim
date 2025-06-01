@@ -1,5 +1,5 @@
 """Preset of agents for the MarqetSim simulation."""
-
+import logging
 from marqetsim.agent import Person
 
 
@@ -79,6 +79,31 @@ def create_joe_the_analyst():
 
 
 if __name__ == "__main__":
+    logger = logging.getLogger("tinytroupe")
+    logger.setLevel(logging.DEBUG)
+    console_handler = logging.StreamHandler()
+    console_handler.setLevel(logging.DEBUG)
+    formatter = logging.Formatter('%(levelname)s - %(message)s')
+    console_handler.setFormatter(formatter)
+    logger.addHandler(console_handler)
+
     # Example usage
     joe = create_joe_the_analyst()
-    print("joe._configuration", joe._configuration)
+    logger.info(f"Created agent: {joe._configuration}")
+
+    joe.set_context(
+        """
+        You decided you want to visit Europe and you are planning your next vacations. You start by searching for good deals as well as good ideas.
+        """
+    )
+
+    joe.listen_and_act(
+        """
+        Can you please evaluate these Bing ads for me? Which one convices you more to buy their particular offering? Select **ONLY** one. Please explain your reasoning, based on your background and personality.
+
+        Options:
+        1. **Visit Paris**: Experience the romance of Paris with a 3-day package including flights and hotel for $499.
+        2. **Explore Rome**: Discover the history of Rome with a 5-day tour including flights, hotel, and guided tours for $799.
+        3. **Relax in Barcelona**: Enjoy the sun and culture of Barcelona with a 4-day package including flights and hotel for $599.
+        """
+    )
