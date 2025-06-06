@@ -35,10 +35,14 @@ def launch(file_path):
             f"#option-{i+1} " + opt.pop("content") for i, opt in enumerate(options)
         ]
         request_msg = f"{questions}\n" + "\n\n".join(options_merged)
+        print("=" * 20 + "create Person")
         people = [create_joe_the_analyst()]
+        print("=" * 20 + "Person created")
         all_response = {}
         for person in people:
+            print("=" * 20 + "set context")
             person.set_context(situation)
+            print("=" * 20 + "context is set")
             all_response[person.name] = person.listen_and_act(request_msg)
 
         click.echo(data.pop("project"))

@@ -249,3 +249,37 @@ class Config:
         else:
             load_dotenv()
             logger.info("Using .env")
+
+
+class RichTextStyle:
+    """Log Styling."""
+
+    STIMULUS_CONVERSATION_STYLE = "bold italic cyan1"
+    STIMULUS_THOUGHT_STYLE = "dim italic cyan1"
+    STIMULUS_DEFAULT_STYLE = "italic"
+    ACTION_DONE_STYLE = "grey82"
+    ACTION_TALK_STYLE = "bold green3"
+    ACTION_THINK_STYLE = "green"
+    ACTION_DEFAULT_STYLE = "purple"
+
+    @classmethod
+    def get_style_for(cls, kind: str, event_type: str):
+        """style for kind and event type."""
+        
+        if kind == "stimulus" or kind == "stimuli":
+            if event_type == "CONVERSATION":
+                return cls.STIMULUS_CONVERSATION_STYLE
+            elif event_type == "THOUGHT":
+                return cls.STIMULUS_THOUGHT_STYLE
+            else:
+                return cls.STIMULUS_DEFAULT_STYLE
+
+        elif kind == "action":
+            if event_type == "DONE":
+                return cls.ACTION_DONE_STYLE
+            elif event_type == "TALK":
+                return cls.ACTION_TALK_STYLE
+            elif event_type == "THINK":
+                return cls.ACTION_THINK_STYLE
+            else:
+                return cls.ACTION_DEFAULT_STYLE

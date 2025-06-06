@@ -9,7 +9,7 @@ import json
 from pydantic import BaseModel
 
 from marqetsim import openai_utils, utils
-from marqetsim.utils import repeat_on_error
+from marqetsim.utils import repeat_on_error, break_text_at_length
 from marqetsim import config
 
 logger = logging.getLogger("tinytroupe")
@@ -22,7 +22,9 @@ default["LLM_TYPE"] = config["Simulation"].get("LLM_TYPE", "Ollama")
 class Person:
     """Person class representing an agent in the simulation."""
 
+    PP_TEXT_WIDTH = 100
     MAX_ACTIONS_BEFORE_DONE = 15
+    communication_display: bool = True
 
     def __init__(self, name):
         self.name = name
@@ -43,6 +45,7 @@ class Person:
         self._init_system_message = None
         self.current_messages = []
         self._mental_faculties = []
+        self._displayed_communications_buffer = []
 
         # The list of actions that this agent has performed so far, but which have not been
         # consumed by the environment yet.
@@ -101,7 +104,17 @@ class Person:
         }
         self.store_in_memory(data)
 
-        return self
+        print("=" * 20 + "communication display")
+        if Person.communication_display:
+            self._display_communication(
+                role="user",
+                content=content,
+                kind="stimuli",
+                simplified=True,
+                max_content_length=1024,
+            )
+
+        return self  # allows easier chaining of methods
 
     def iso_datetime(self) -> str:
         """
@@ -379,6 +392,8 @@ class Person:
         self.reset_prompt()
 
     def retrieve_relevant_memories_for_current_context(self, top_k=7) -> list:
+        """Retrieve relevant memories."""
+
         # current context is composed of th recent memories, plus context, goals, attention, and emotions
         context = self._configuration["current_context"]
         goals = self._configuration["current_goals"]
@@ -414,6 +429,8 @@ class Person:
         include_omission_info: bool = True,
         max_content_length: int = None,
     ) -> list:
+        """Retrieve memories from episodic."""
+
         episodes = self.episodic_memory.retrieve(
             first_n=first_n, last_n=last_n, include_omission_info=include_omission_info
         )
@@ -424,9 +441,148 @@ class Person:
         return episodes
 
     def retrieve_relevant_memories(self, relevance_target: str, top_k=20) -> list:
+        """Retrieve relevant memories."""
+
         relevant = self.semantic_memory.retrieve_relevant(relevance_target, top_k=top_k)
 
         return relevant
+
+    # ============== Display ==============
+    def _display_communication(
+        self,
+        role,
+        content,
+        kind,
+        simplified=True,
+        max_content_length=default["max_content_display_length"],
+    ):
+        """
+        Displays the current communication and stores it in a buffer for later use.
+        """
+        if kind == "stimuli":
+            rendering = self._pretty_stimuli(
+                role=role,
+                content=content,
+                simplified=simplified,
+                max_content_length=max_content_length,
+            )
+            source = content["stimuli"][0]["source"]
+            target = self.name
+
+        elif kind == "action":
+            rendering = self._pretty_action(
+                role=role,
+                content=content,
+                simplified=simplified,
+                max_content_length=max_content_length,
+            )
+            source = self.name
+            target = content["action"]["target"]
+
+        else:
+            raise ValueError(f"Unknown communication kind: {kind}")
+
+        self._push_and_display_latest_communication(
+            {
+                "kind": kind,
+                "rendering": rendering,
+                "content": content,
+                "source": source,
+                "target": target,
+            }
+        )
+
+    def _pretty_stimuli(
+        self,
+        role,
+        content,
+        simplified=True,
+        max_content_length=default["max_content_display_length"],
+    ) -> list:
+        """
+        Pretty prints stimuli.
+        """
+
+        lines = []
+        msg_simplified_actor = "USER"
+        for stimus in content["stimuli"]:
+            if simplified:
+                if stimus["source"] != "":
+                    msg_simplified_actor = stimus["source"]
+
+                else:
+                    msg_simplified_actor = "USER"
+
+                msg_simplified_type = stimus["type"]
+                msg_simplified_content = break_text_at_length(
+                    stimus["content"], max_length=max_content_length
+                )
+
+                indent = " " * len(msg_simplified_actor) + "      > "
+                msg_simplified_content = textwrap.fill(
+                    msg_simplified_content,
+                    width=Person.PP_TEXT_WIDTH,
+                    initial_indent=indent,
+                    subsequent_indent=indent,
+                )
+
+                #
+                # Using rich for formatting. Let's make things as readable as possible!
+                #
+
+                rich_style = utils.RichTextStyle.get_style_for(
+                    "stimulus", msg_simplified_type
+                )
+                lines.append(
+                    f"[{rich_style}][underline]{msg_simplified_actor}[/] --> [{rich_style}][underline]{self.name}[/]: [{msg_simplified_type}] \n{msg_simplified_content}[/]"
+                )
+            else:
+                lines.append(f"{role}: {content}")
+
+        return "\n".join(lines)
+
+    def _pretty_action(
+        self,
+        role,
+        content,
+        simplified=True,
+        max_content_length=default["max_content_display_length"],
+    ) -> str:
+        """
+        Pretty prints an action.
+        """
+        if simplified:
+            msg_simplified_actor = self.name
+            msg_simplified_type = content["action"]["type"]
+            msg_simplified_content = break_text_at_length(
+                content["action"].get("content", ""), max_length=max_content_length
+            )
+
+            indent = " " * len(msg_simplified_actor) + "      > "
+            msg_simplified_content = textwrap.fill(
+                msg_simplified_content,
+                width=TinyPerson.PP_TEXT_WIDTH,
+                initial_indent=indent,
+                subsequent_indent=indent,
+            )
+
+            #
+            # Using rich for formatting. Let's make things as readable as possible!
+            #
+            rich_style = utils.RichTextStyle.get_style_for(
+                "action", msg_simplified_type
+            )
+            return f"[{rich_style}][underline]{msg_simplified_actor}[/] acts: [{msg_simplified_type}] \n{msg_simplified_content}[/]"
+
+        else:
+            return f"{role}: {content}"
+
+    def _push_and_display_latest_communication(self, communication):
+        """
+        Pushes the latest communications to the agent's buffer.
+        """
+        self._displayed_communications_buffer.append(communication)
+        print(communication["rendering"])
 
 
 class TinyMentalFaculty:
