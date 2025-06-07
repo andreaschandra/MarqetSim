@@ -7,17 +7,18 @@ from typing import Any
 import chevron
 import json
 from pydantic import BaseModel
+from rich import print
 
-from marqetsim import openai_utils, utils
+from marqetsim import openai_utils, ollama_utils, anthropic_utils, utils
 from marqetsim.utils import repeat_on_error, break_text_at_length
 from marqetsim import config
 
-logger = logging.getLogger("tinytroupe")
+logger = logging.getLogger("marqetsim")
 
 default = {}
 default["max_content_display_length"] = 1024
 default["LLM_TYPE"] = config["Simulation"].get("LLM_TYPE", "Ollama")
-
+print(f"Default config: {default}")
 
 class Person:
     """Person class representing an agent in the simulation."""
@@ -56,8 +57,13 @@ class Person:
         # the current environment in which the agent is acting
         self.environment = None
 
+        # Memory
         self.episodic_memory = EpisodicMemory()
         self.semantic_memory = SemanticMemory()
+
+        # LLM Provider
+        self.ollama_client = ollama_utils.OllamaAPIClient()
+        self.anthropic_client = anthropic_utils.AnthropicAPIClient()
 
     def define(self, key, value):
         """Define Person attributes."""
@@ -81,7 +87,7 @@ class Person:
         """Listen to a request and act on it."""
         # Simulate listening and acting based on the request message
         self.listen(message)
-        response = self.act()
+        response = self.act(return_actions=True)
 
         return response
 
@@ -104,7 +110,6 @@ class Person:
         }
         self.store_in_memory(data)
 
-        print("=" * 20 + "communication display")
         if Person.communication_display:
             self._display_communication(
                 role="user",
@@ -134,17 +139,12 @@ class Person:
     def store_in_memory(self, data):
         """Store data in memory."""
         # Simulate storing data in memory
-        print(f"Storing data: {data}")
+        logger.debug(f"Storing data: {data}\n\n")
         self.episodic_memory.store(data)
 
     # ============== act ==============
 
-    def act(
-        self,
-        until_done=True,
-        n=None,
-        return_actions=False,
-    ):
+    def act(self, return_actions=False):
         """
         Acts in the environment and updates its internal cognitive state.
         Either acts until the agent is done and needs additional stimuli, or acts a fixed number of times,
@@ -156,11 +156,6 @@ class Person:
             return_actions (bool): Whether to return the actions or not. Defaults to False.
         """
 
-        # either act until done or act a fixed number of times, but not both
-        assert not (until_done and n is not None)
-        if n is not None:
-            assert n < Person.MAX_ACTIONS_BEFORE_DONE
-
         contents = []
 
         # Aux function to perform exactly one action.
@@ -171,79 +166,64 @@ class Person:
             logger.debug(">>>============= _produce_message() =============")
             role, content = self._produce_message()
 
-            cognitive_state = content["cognitive_state"]
+            for subcontent in content:
+                action = subcontent["action"]
+                cognitive_state = subcontent["cognitive_state"]
+                logger.debug(f"{self.name}'s action: {action}")
 
-            action = content["action"]
-            logger.debug("{self.name}'s action: {action}")
+                logger.debug(">>>============= store_in_memory() =============")
+                self.store_in_memory(
+                    {
+                        "role": role,
+                        "content": subcontent,
+                        "type": "action",
+                        "simulation_timestamp": self.iso_datetime(),
+                    }
+                )
 
-            goals = cognitive_state["goals"]
-            attention = cognitive_state["attention"]
-            emotions = cognitive_state["emotions"]
+                self._actions_buffer.append(action)
+                logger.debug(">>>============= _update_cognitive_state() =============")
+                self._update_cognitive_state(
+                    goals=cognitive_state["goals"],
+                    attention=cognitive_state["attention"],
+                    emotions=cognitive_state["emotions"],
+                )
 
-            logger.debug(">>>============= store_in_memory() =============")
-            self.store_in_memory(
-                {
-                    "role": role,
-                    "content": content,
-                    "type": "action",
-                    "simulation_timestamp": self.iso_datetime(),
-                }
-            )
+                contents.append(subcontent)
 
-            self._actions_buffer.append(action)
-            logger.debug(">>>============= _update_cognitive_state() =============")
-            self._update_cognitive_state(
-                goals=cognitive_state["goals"],
-                attention=cognitive_state["attention"],
-                emotions=cognitive_state["emotions"],
-            )
-
-            contents.append(content)
-
-            #
-            # Some actions induce an immediate stimulus or other side-effects. We need to process them here, by means of the mental faculties.
-            #
-            for faculty in self._mental_faculties:
-                faculty.process_action(self, action)
-
-        #
-        # How to proceed with a sequence of actions.
-        #
-
-        ##### Option 1: run N actions ######
-        if n is not None:
-            for _ in range(n):
-                aux_act_once()
-
-        ##### Option 2: run until DONE ######
-        elif until_done:
-            while (len(contents) == 0) or (
-                not contents[-1]["action"]["type"] == "DONE"
-            ):
-
-                # check if the agent is acting without ever stopping
-                if len(contents) > Person.MAX_ACTIONS_BEFORE_DONE:
-                    logger.warning(
-                        f"[{self.name}] Agent {self.name} is acting without ever stopping. This may be a bug. Let's stop it here anyway."
+                logger.debug(">>>============= _display_communication() =============")
+                if Person.communication_display:
+                    self._display_communication(
+                        role=role,
+                        content=subcontent,
+                        kind="action",
+                        simplified=True,
+                        max_content_length=1024,
                     )
+
+                #
+                # Some actions induce an immediate stimulus or other side-effects. We need to process them here, by means of the mental faculties.
+                #
+                for faculty in self._mental_faculties:
+                    faculty.process_action(self, action)
+
+        while (len(contents) == 0) or (not contents[-1]["action"]["type"] == "DONE"):
+            logger.debug(f"Total contents: {len(contents)}\n\n")
+
+            # check if the agent is acting without ever stopping
+            if len(contents) > Person.MAX_ACTIONS_BEFORE_DONE:
+                logger.warning(f"[{self.name}] Agent {self.name} is acting without ever stopping. This may be a bug. Let's stop it here anyway.")
+                break
+
+            if (len(contents) > 4):
+                # just some minimum number of actions to check for repetition, could be anything >= 3
+                # if the last three actions were the same, then we are probably in a loop
+                if (contents[-1]["action"] == contents[-2]["action"] == contents[-3]["action"]):
+                    logger.warning(f"[{self.name}] Agent {self.name} is acting in a loop. This may be a bug. Let's stop it here anyway.")
                     break
 
-                if (
-                    len(contents) > 4
-                ):  # just some minimum number of actions to check for repetition, could be anything >= 3
-                    # if the last three actions were the same, then we are probably in a loop
-                    if (
-                        contents[-1]["action"]
-                        == contents[-2]["action"]
-                        == contents[-3]["action"]
-                    ):
-                        logger.warning(
-                            f"[{self.name}] Agent {self.name} is acting in a loop. This may be a bug. Let's stop it here anyway."
-                        )
-                        break
-
-                logger.debug(f">>============= aux_act_once() =============")
-                aux_act_once()
+            logger.debug(">>============= aux_act_once() =============")
+            aux_act_once()
 
         if return_actions:
             return contents
@@ -261,8 +241,9 @@ class Person:
             for msg in self.current_messages
         ]
 
-        logger.debug(f"[{self.name}] Sending messages to OpenAI API")
-        logger.debug(f"[{self.name}] Last interaction: {messages[-1]}")
+        llm_type = default["LLM_TYPE"]
+        logger.debug(f"[{self.name}] Sending messages to {llm_type}\n")
+        logger.debug(f"[{self.name}] Messages: {messages} \n\n")
 
         if default["LLM_TYPE"] == "Ollama":
             logger.debug(
@@ -271,15 +252,21 @@ class Person:
             next_message = self.ollama_client.send_message(
                 messages, response_format=CognitiveActionModel
             )
-        else:
+        elif default["LLM_TYPE"] == "OpenAI":
             logger.debug(">>>>============= openai_utils.client().send_message() =============")
             next_message = openai_utils.client().send_message(
                 messages, response_format=CognitiveActionModel
             )
+        elif default["LLM_TYPE"] == "Anthropic":
+            next_message = self.anthropic_client.send_message(messages, response_format=CognitiveActionModel)
+        else:
+            raise ValueError(
+                f"Unknown LLM type: {default['LLM_TYPE']}. Supported types are: Ollama, OpenAI, Anthropic."
+            )
 
-        logger.debug(f"[{self.name}] Received message: {next_message}")
+        logger.debug(f"[{self.name}] Received message: {next_message}\n\n")
 
-        return next_message["role"], utils.extract_json(next_message["content"])
+        return next_message["role"], next_message["content"]
 
     def reset_prompt(self):
         """Reset prompt"""
@@ -293,7 +280,7 @@ class Person:
         # reset system message
         logger.debug(">>>>>============= reset_prompt: set self.current_messages =============")
         self.current_messages = [
-            {"role": "system", "content": self._init_system_message}
+            {"role": "user", "content": self._init_system_message}
         ]
 
         # sets up the actual interaction messages to use for prompting
@@ -353,21 +340,14 @@ class Person:
 
         return episodes
 
-    def _update_cognitive_state(
-        self, goals=None, context=None, attention=None, emotions=None
-    ):
+    def _update_cognitive_state(self, goals=None, context=None, attention=None, emotions=None):
         """
         Update the TinyPerson's cognitive state.
         """
 
         # Update current datetime. The passage of time is controlled by the environment, if any.
-        if (
-            self.environment is not None
-            and self.environment.current_datetime is not None
-        ):
-            self._configuration["current_datetime"] = utils.pretty_datetime(
-                self.environment.current_datetime
-            )
+        if (self.environment is not None and self.environment.current_datetime is not None):
+            self._configuration["current_datetime"] = utils.pretty_datetime(self.environment.current_datetime)
 
         # update current goals
         if goals is not None:
@@ -394,7 +374,7 @@ class Person:
     def retrieve_relevant_memories_for_current_context(self, top_k=7) -> list:
         """Retrieve relevant memories."""
 
-        # current context is composed of th recent memories, plus context, goals, attention, and emotions
+        # current context is composed of the recent memories, plus context, goals, attention, and emotions
         context = self._configuration["current_context"]
         goals = self._configuration["current_goals"]
         attention = self._configuration["current_attention"]
@@ -561,7 +541,7 @@ class Person:
             indent = " " * len(msg_simplified_actor) + "      > "
             msg_simplified_content = textwrap.fill(
                 msg_simplified_content,
-                width=TinyPerson.PP_TEXT_WIDTH,
+                width=Person.PP_TEXT_WIDTH,
                 initial_indent=indent,
                 subsequent_indent=indent,
             )
@@ -1026,18 +1006,22 @@ class SemanticMemory(TinyMemory):
         self.add_web_urls(self.documents_web_urls)
 
 
+# ============== Schema ==============
 class Action(BaseModel):
+    """Action model."""
     type: str
     content: str
     target: str
 
 
 class CognitiveState(BaseModel):
+    """Cognitive state model."""
     goals: str
     attention: str
     emotions: str
 
 
 class CognitiveActionModel(BaseModel):
+    """Cognitive action model."""
     action: Action
     cognitive_state: CognitiveState

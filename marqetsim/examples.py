@@ -79,7 +79,7 @@ def create_joe_the_analyst():
 
 
 if __name__ == "__main__":
-    logger = logging.getLogger("tinytroupe")
+    logger = logging.getLogger("marqetsim")
     logger.setLevel(logging.DEBUG)
     console_handler = logging.StreamHandler()
     console_handler.setLevel(logging.DEBUG)
@@ -98,8 +98,7 @@ if __name__ == "__main__":
     )
 
     joe.listen_and_act(
-        """
-        Can you please evaluate these Bing ads for me? Which one convices you more to buy their particular offering? Select **ONLY** one. Please explain your reasoning, based on your background and personality.
+        """Can you please evaluate these Bing ads for me? Which one convices you more to buy their particular offering? Select **ONLY** one. Please explain your reasoning, based on your background and personality.
 
         Options:
         1. **Visit Paris**: Experience the romance of Paris with a 3-day package including flights and hotel for $499.

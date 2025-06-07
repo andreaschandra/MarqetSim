@@ -9,7 +9,7 @@ from openai import AzureOpenAI, OpenAI
 
 from marqetsim import utils
 
-logger = logging.getLogger("tinytroupe")
+logger = logging.getLogger("marqetsim")
 
 # We'll use various configuration elements below
 config = utils.read_config_file()
@@ -177,7 +177,6 @@ class OpenAIClient:
         exponential_backoff_factor=default["exponential_backoff_factor"],
         n=1,
         response_format=None,
-        echo=False,
     ):
         """
         Sends a message to the OpenAI API and returns the response.
@@ -268,7 +267,7 @@ class OpenAIClient:
                         )
                         time.sleep(waiting_time)
 
-                    logger.debug(f">>>>>============= _raw_model_call() =============")
+                    logger.debug(">>>>>============= _raw_model_call() =============")
                     response = self._raw_model_call(model, chat_api_params)
                     if self.cache_api_calls:
                         self.api_cache[cache_key] = response

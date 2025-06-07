@@ -11,7 +11,7 @@ from typing import Collection, Union
 from dotenv import load_dotenv
 
 # logger
-logger = logging.getLogger("tinytroupe")
+logger = logging.getLogger("marqetsim")
 
 def extract_json(text: str) -> dict:
     """
