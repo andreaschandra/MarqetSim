@@ -1,8 +1,10 @@
 """cli debugging"""
 
-from pathlib import Path
 import sys
+from pathlib import Path
+
 from click.testing import CliRunner
+
 from marqetsim.cli import launch  # Adjust this import as needed
 
 if len(sys.argv) < 2:

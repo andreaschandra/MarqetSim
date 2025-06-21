@@ -1,17 +1,18 @@
 """Agent configuration and management."""
 
+import json
+import logging
 import os
 import textwrap
-import logging
 from typing import Any
+
 import chevron
-import json
 from pydantic import BaseModel
 from rich import print
 
-from marqetsim.utils import openai_utils, ollama_utils, anthropic_utils,common
-from marqetsim.utils.common import repeat_on_error, break_text_at_length
 from marqetsim import config
+from marqetsim.utils import anthropic_utils, common, ollama_utils, openai_utils
+from marqetsim.utils.common import break_text_at_length, repeat_on_error
 
 logger = logging.getLogger("marqetsim")
 
@@ -19,6 +20,7 @@ default = {}
 default["max_content_display_length"] = 1024
 default["LLM_TYPE"] = config["Simulation"].get("LLM_TYPE", "Ollama")
 print(f"Default config: {default}")
+
 
 class Person:
     """Person class representing an agent in the simulation."""
@@ -59,7 +61,9 @@ class Person:
         # consumed by the environment yet.
         self._actions_buffer = []
 
-        self._prompt_template_path = os.path.join(os.path.dirname(__file__), "prompts/tinyperson.mustache")
+        self._prompt_template_path = os.path.join(
+            os.path.dirname(__file__), "prompts/tinyperson.mustache"
+        )
 
         # the current environment in which the agent is acting
         self.environment = None
@@ -219,14 +223,22 @@ class Person:
 
             # check if the agent is acting without ever stopping
             if len(contents) > Person.MAX_ACTIONS_BEFORE_DONE:
-                logger.warning(f"[{self.name}] Agent {self.name} is acting without ever stopping. This may be a bug. Let's stop it here anyway.")
+                logger.warning(
+                    f"[{self.name}] Agent {self.name} is acting without ever stopping. This may be a bug. Let's stop it here anyway."
+                )
                 break
 
-            if (len(contents) > 4):
+            if len(contents) > 4:
                 # just some minimum number of actions to check for repetition, could be anything >= 3
                 # if the last three actions were the same, then we are probably in a loop
-                if (contents[-1]["action"] == contents[-2]["action"] == contents[-3]["action"]):
-                    logger.warning(f"[{self.name}] Agent {self.name} is acting in a loop. This may be a bug. Let's stop it here anyway.")
+                if (
+                    contents[-1]["action"]
+                    == contents[-2]["action"]
+                    == contents[-3]["action"]
+                ):
+                    logger.warning(
+                        f"[{self.name}] Agent {self.name} is acting in a loop. This may be a bug. Let's stop it here anyway."
+                    )
                     break
 
             logger.debug(">>============= aux_act_once() =============")
@@ -260,12 +272,16 @@ class Person:
                 messages, response_format=CognitiveActionModel
             )
         elif default["LLM_TYPE"] == "OpenAI":
-            logger.debug(">>>>============= openai_utils.client().send_message() =============")
+            logger.debug(
+                ">>>>============= openai_utils.client().send_message() ============="
+            )
             next_message = openai_utils.client().send_message(
                 messages, response_format=CognitiveActionModel
             )
         elif default["LLM_TYPE"] == "Anthropic":
-            next_message = self.anthropic_client.send_message(messages, response_format=CognitiveActionModel)
+            next_message = self.anthropic_client.send_message(
+                messages, response_format=CognitiveActionModel
+            )
         else:
             raise ValueError(
                 f"Unknown LLM type: {default['LLM_TYPE']}. Supported types are: Ollama, OpenAI, Anthropic."
@@ -285,17 +301,21 @@ class Person:
         # TODO actually, figure out another way to update agent state without "changing history"
 
         # reset system message
-        logger.debug(">>>>>============= reset_prompt: set self.current_messages =============")
-        self.current_messages = [
-            {"role": "user", "content": self._init_system_message}
-        ]
+        logger.debug(
+            ">>>>>============= reset_prompt: set self.current_messages ============="
+        )
+        self.current_messages = [{"role": "user", "content": self._init_system_message}]
 
         # sets up the actual interaction messages to use for prompting
-        logger.debug(">>>>>============= reset_prompt: add self.current_messages with retrieve_recent_memories =============")
+        logger.debug(
+            ">>>>>============= reset_prompt: add self.current_messages with retrieve_recent_memories ============="
+        )
         self.current_messages += self.retrieve_recent_memories()
 
         # add a final user message, which is neither stimuli or action, to instigate the agent to act properly
-        logger.debug(">>>>>============= reset_prompt: add self.current_messages with hard coded =============")
+        logger.debug(
+            ">>>>>============= reset_prompt: add self.current_messages with hard coded ============="
+        )
         self.current_messages.append(
             {
                 "role": "user",
@@ -309,7 +329,7 @@ class Person:
     def generate_agent_system_prompt(self):
         """Generate agent system prompt."""
 
-        with open(self._prompt_template_path, encoding="utf-8",  mode="r") as f:
+        with open(self._prompt_template_path, encoding="utf-8", mode="r") as f:
             agent_prompt_template = f.read()
 
         # let's operate on top of a copy of the configuration, because we'll need to add more variables, etc.
@@ -347,14 +367,21 @@ class Person:
 
         return episodes
 
-    def _update_cognitive_state(self, goals=None, context=None, attention=None, emotions=None):
+    def _update_cognitive_state(
+        self, goals=None, context=None, attention=None, emotions=None
+    ):
         """
         Update the TinyPerson's cognitive state.
         """
 
         # Update current datetime. The passage of time is controlled by the environment, if any.
-        if (self.environment is not None and self.environment.current_datetime is not None):
-            self._configuration["current_datetime"] = common.pretty_datetime(self.environment.current_datetime)
+        if (
+            self.environment is not None
+            and self.environment.current_datetime is not None
+        ):
+            self._configuration["current_datetime"] = common.pretty_datetime(
+                self.environment.current_datetime
+            )
 
         # update current goals
         if goals is not None:
@@ -1016,6 +1043,7 @@ class SemanticMemory(TinyMemory):
 # ============== Schema ==============
 class Action(BaseModel):
     """Action model."""
+
     type: str
     content: str
     target: str
@@ -1023,6 +1051,7 @@ class Action(BaseModel):
 
 class CognitiveState(BaseModel):
     """Cognitive state model."""
+
     goals: str
     attention: str
     emotions: str
@@ -1030,5 +1059,6 @@ class CognitiveState(BaseModel):
 
 class CognitiveActionModel(BaseModel):
     """Cognitive action model."""
+
     action: Action
     cognitive_state: CognitiveState

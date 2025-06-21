@@ -1,21 +1,23 @@
-import click
 import json
 from pathlib import Path
 
+import click
+
 from marqetsim.examples import create_joe_the_analyst
 from marqetsim.simulator import create_person
-from marqetsim.utils.common import read_yaml_file
+from marqetsim.utils import common
+
 
 @click.command()
 @click.argument("file_path", type=click.Path(exists=True))
 def launch(file_path):
     """Read a YAML or JSON file and print it as a dictionary."""
     try:
-        data = read_yaml_file(file_path)
+        data = common.read_yaml_file(file_path)
         situation = data.pop("situation")
         options = data.pop("options")
         questions = data.pop("questions")
-        if 'agent' not in data:
+        if "agent" not in data:
             people = [create_joe_the_analyst()]
         else:
             one_person = create_person(profile=data.pop("agent"))
