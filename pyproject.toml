@@ -31,7 +31,7 @@ dependencies = [
     "llama-index", "llama-index-embeddings-huggingface", "llama-index-readers-web",
     "pypandoc", "docx", "markdown",
     "jupyter",
-    "pydantic"
+    "pydantic","anthropic"
 ]
 
 [project.scripts]
