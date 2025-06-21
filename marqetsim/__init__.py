@@ -1,7 +1,7 @@
 """MarqetSim is a library for simulating markets and agent interactions."""
 
-from marqetsim import utils
+from marqetsim.utils import common
 
 __version__ = "0.1.0"
 
-config = utils.read_config_file(use_cache=True, verbose=True)
+config = common.read_config_file(use_cache=True, verbose=True)

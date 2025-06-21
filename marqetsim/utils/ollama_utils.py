@@ -4,7 +4,7 @@ import json
 from ollama import Client
 from pydantic import BaseModel
 
-from marqetsim import utils
+from marqetsim.utils import common
 
 
 class OllamaAPIClient:
@@ -16,7 +16,7 @@ class OllamaAPIClient:
 
     def get_config(self):
 
-        config = utils.read_config_file()
+        config = common.read_config_file()
 
         default = {}
         default["URL"] = config["Ollama"].get("URL", "localhost:11434")

@@ -8,11 +8,11 @@ include-package-data = true
 
 [project]
 name = "marqetsim"
-version = "0.1.0"
+version = "0.1.1"
 authors = [
   { name="Andreas Chandra", email="andreas@jakartaresearch.com" }
 ]
-description = "LLM-based agent for market research."
+description = "LLM-based agent for ket research."
 readme = "README.md"
 requires-python = ">=3.10"
 license = {text = "MIT"}

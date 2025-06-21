@@ -9,9 +9,23 @@ import configparser
 from pathlib import Path
 from typing import Collection, Union
 from dotenv import load_dotenv
+import yaml
 
 # logger
 logger = logging.getLogger("marqetsim")
+
+def read_yaml_file(file_path):
+    path = Path(file_path)
+    if not path.exists():
+        raise FileNotFoundError(f"File '{file_path}' not found.")
+
+    with open(file_path, "r") as f:
+        if file_path.endswith(".json"):
+            return json.load(f)
+        elif file_path.endswith((".yaml", ".yml")):
+            return yaml.safe_load(f)
+        else:
+            raise ValueError("Unsupported file format. Use .json or .yaml/.yml")
 
 def extract_json(text: str) -> dict:
     """
@@ -135,7 +149,7 @@ def read_config_file(use_cache=True, verbose=True) -> configparser.ConfigParser:
         config = configparser.ConfigParser()
 
         # Read the default values in the module directory.
-        config_file_path = Path(__file__).parent.absolute() / "config.ini"
+        config_file_path = Path(__file__).parent.parent.absolute() / "settings" / "config.ini"
         if verbose:
             print(f"Looking for default config on: {config_file_path}") 
 
@@ -187,7 +201,7 @@ def add_rai_template_variables_if_enabled(template_variables: dict) -> dict:
     )
 
     # Harmful content
-    with open(os.path.join(os.path.dirname(__file__), "prompts/rai_harmful_content_prevention.md"), encoding="utf-8", mode="r") as f:
+    with open(os.path.join(Path(__file__).parent.parent.absolute(), "prompts/rai_harmful_content_prevention.md"), encoding="utf-8", mode="r") as f:
         rai_harmful_content_prevention_content = f.read()
 
     template_variables["rai_harmful_content_prevention"] = (
@@ -197,7 +211,7 @@ def add_rai_template_variables_if_enabled(template_variables: dict) -> dict:
     )
 
     # Copyright infringement
-    with open(os.path.join(os.path.dirname(__file__), "prompts/rai_copyright_infringement_prevention.md",), encoding="utf-8", mode="r") as f:
+    with open(os.path.join(Path(__file__).parent.parent.absolute(), "prompts/rai_copyright_infringement_prevention.md",), encoding="utf-8", mode="r") as f:
         rai_copyright_infringement_prevention_content = f.read()
 
     template_variables["rai_copyright_infringement_prevention"] = (
@@ -283,3 +297,5 @@ class RichTextStyle:
                 return cls.ACTION_THINK_STYLE
             else:
                 return cls.ACTION_DEFAULT_STYLE
+
+

@@ -9,8 +9,8 @@ import json
 from pydantic import BaseModel
 from rich import print
 
-from marqetsim import openai_utils, ollama_utils, anthropic_utils, utils
-from marqetsim.utils import repeat_on_error, break_text_at_length
+from marqetsim.utils import openai_utils, ollama_utils, anthropic_utils,common
+from marqetsim.utils.common import repeat_on_error, break_text_at_length
 from marqetsim import config
 
 logger = logging.getLogger("marqetsim")
@@ -32,9 +32,16 @@ class Person:
         self._configuration = {
             "name": self.name,
             "age": None,
+            "gender": None,
             "nationality": None,
+            "city_of_residence": None,
             "country_of_residence": None,
             "occupation": None,
+            "income_level": None,
+            "education": None,
+            "employment": None,
+            "marital_status": None,
+            "household": None,
             "routines": [],
             "occupation_description": None,
             "personality_traits": [],
@@ -325,7 +332,7 @@ class Person:
         )
 
         # RAI prompt components, if requested
-        template_variables = utils.add_rai_template_variables_if_enabled(
+        template_variables = common.add_rai_template_variables_if_enabled(
             template_variables
         )
 
@@ -336,7 +343,7 @@ class Person:
         episodes = self.episodic_memory.retrieve_recent()
 
         if max_content_length is not None:
-            episodes = utils.truncate_actions_or_stimuli(episodes, max_content_length)
+            episodes = common.truncate_actions_or_stimuli(episodes, max_content_length)
 
         return episodes
 
@@ -347,7 +354,7 @@ class Person:
 
         # Update current datetime. The passage of time is controlled by the environment, if any.
         if (self.environment is not None and self.environment.current_datetime is not None):
-            self._configuration["current_datetime"] = utils.pretty_datetime(self.environment.current_datetime)
+            self._configuration["current_datetime"] = common.pretty_datetime(self.environment.current_datetime)
 
         # update current goals
         if goals is not None:
@@ -416,7 +423,7 @@ class Person:
         )
 
         if max_content_length is not None:
-            episodes = utils.truncate_actions_or_stimuli(episodes, max_content_length)
+            episodes = common.truncate_actions_or_stimuli(episodes, max_content_length)
 
         return episodes
 
@@ -510,7 +517,7 @@ class Person:
                 # Using rich for formatting. Let's make things as readable as possible!
                 #
 
-                rich_style = utils.RichTextStyle.get_style_for(
+                rich_style = common.RichTextStyle.get_style_for(
                     "stimulus", msg_simplified_type
                 )
                 lines.append(
@@ -549,7 +556,7 @@ class Person:
             #
             # Using rich for formatting. Let's make things as readable as possible!
             #
-            rich_style = utils.RichTextStyle.get_style_for(
+            rich_style = common.RichTextStyle.get_style_for(
                 "action", msg_simplified_type
             )
             return f"[{rich_style}][underline]{msg_simplified_actor}[/] acts: [{msg_simplified_type}] \n{msg_simplified_content}[/]"
@@ -982,7 +989,7 @@ class SemanticMemory(TinyMemory):
             for document in new_documents:
 
                 # out of an abundance of caution, we sanitize the text
-                document.text = utils.sanitize_raw_string(document.text)
+                document.text = common.sanitize_raw_string(document.text)
 
                 if doc_to_name_func is not None:
                     name = doc_to_name_func(document)
