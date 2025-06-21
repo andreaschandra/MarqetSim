@@ -1,5 +1,4 @@
-import json
-from pathlib import Path
+"""Cli Function"""
 
 import click
 
@@ -23,7 +22,7 @@ def launch(file_path):
             one_person = create_person(profile=data.pop("agent"))
             people = [one_person]
 
-        ## TODO: need function to handle path image options
+        # TODO: need function to handle path image options
         options_merged = [
             f"#option-{i+1} " + opt.pop("content") for i, opt in enumerate(options)
         ]
