@@ -11,3 +11,4 @@ llama-index==0.12.3
 llama-index-readers-web==0.3.1
 ollama==0.4.5
 anthropic==0.54.0
+click

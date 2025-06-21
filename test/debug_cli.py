@@ -1,7 +1,9 @@
+"""cli debugging"""
+
+from pathlib import Path
 import sys
 from click.testing import CliRunner
 from marqetsim.cli import launch  # Adjust this import as needed
-from pathlib import Path
 
 if len(sys.argv) < 2:
     print("Usage: python debug_cli.py <path-to-arg1>")
