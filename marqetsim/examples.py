@@ -102,7 +102,7 @@ if __name__ == "__main__":
 
     # Example usage
     joe = create_joe_the_analyst()
-    logger.info(f"Created agent: {joe._configuration}")
+    # logger.info(f"Created agent: {joe._configuration}") --> should not be accessed
 
     joe.set_context(
         """
