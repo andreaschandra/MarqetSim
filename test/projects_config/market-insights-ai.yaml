@@ -69,3 +69,17 @@ options:
               Special Offers
               Discover the Difference"
 
+agent:
+  age: 27 # int [0 - 100]
+  gender: Female # enum = [Male, Female, Prefer not to say]
+  city_of_residence: Tokyo  # str = [name of city]
+  income_level: High # enum = [Low, Medium, High]
+  education: University # enum = [Elementary, Junior, Senior, University]
+  employment:
+    status: employed # enum = [Employed, Self-employed, Student, Retired, Unemployed]
+    occupation: Engineer # str = [Staff, Engineer, Accountant, etc]
+    industry: Technology # str = [Finance, Manufacture, etc]
+  marital_status: Married # enum = [Single, Married, Divorced, Widowed]
+  household:
+    size: 3 # int = 1 - 10
+    composition: Nuclear family # enum = [Single person living alone, Nuclear family, Single parent family, Childless couple]

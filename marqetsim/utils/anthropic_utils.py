@@ -1,9 +1,10 @@
 """Claude client."""
 
-import re
+import json
 import logging
 import os
-import json
+import re
+
 from anthropic import Anthropic
 from pydantic import BaseModel
 
@@ -20,6 +21,7 @@ class AnthropicAPIClient:
                 "ANTHROPIC_API_KEY"
             ),  # This is the default and can be omitted
         )
+        self.response = None
 
     def send_message(self, message, response_format):
         """
@@ -54,9 +56,15 @@ class AnthropicAPIClient:
             except Exception as e:
                 logger.error(f"Error parsing response: {e} \n Text: {text}")
 
-        response = {"role": raw_response.role, "content": response_json}
+        self.response = {"role": raw_response.role, "content": response_json}
 
-        return response
+        return self.response
+
+    def placeholder(self):
+        """Placeholder response."""
+        data_type = self.response
+        return data_type
+
 
 if __name__ == "__main__":
     # Example usage
@@ -68,7 +76,9 @@ if __name__ == "__main__":
         condition: str
 
     client = AnthropicAPIClient()
-    response = client.send_message("What is the weather like today in Jakarta?", response_format=ResponseFormat)
+    response = client.send_message(
+        "What is the weather like today in Jakarta?", response_format=ResponseFormat
+    )
     print(f"Response text: {response}")
     print(f"Date: {response['content']['date']}")
     print(f"Condition: {response['content']['condition']}")

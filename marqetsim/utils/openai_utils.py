@@ -7,12 +7,12 @@ import openai
 import tiktoken
 from openai import AzureOpenAI, OpenAI
 
-from marqetsim import utils
+from marqetsim.utils import common
 
 logger = logging.getLogger("marqetsim")
 
 # We'll use various configuration elements below
-config = utils.read_config_file()
+config = common.read_config_file()
 
 ###########################################################################
 # Default parameter values
@@ -96,7 +96,7 @@ class LLMRequest:
             self.system_template_name is not None
             and self.user_template_name is not None
         ):
-            self.messages = utils.compose_initial_LLM_messages_with_templates(
+            self.messages = common.compose_initial_LLM_messages_with_templates(
                 self.system_template_name, self.user_template_name, rendering_configs
             )
         else:
@@ -279,7 +279,9 @@ class OpenAIClient:
                     f"Got response in {end_time - start_time:.2f} seconds after {i} attempts."
                 )
 
-                return utils.sanitize_dict(self._raw_model_response_extractor(response))
+                return common.sanitize_dict(
+                    self._raw_model_response_extractor(response)
+                )
 
             except InvalidRequestError as e:
                 logger.error(f"[{i}] Invalid request error, won't retry: {e}")
@@ -531,7 +533,9 @@ def _get_client_for_api_type(api_type):
     try:
         return _api_type_to_client[api_type]
     except KeyError as e:
-        raise ValueError(f"API type {api_type} is not supported. Please check the 'config.ini' file.") from e
+        raise ValueError(
+            f"API type {api_type} is not supported. Please check the 'config.ini' file."
+        ) from e
 
 
 def client():

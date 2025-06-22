@@ -1,13 +1,17 @@
+"""ollama utility functions"""
+
 import argparse
 import json
 
 from ollama import Client
 from pydantic import BaseModel
 
-from marqetsim import utils
+from marqetsim.utils.common import config
 
 
 class OllamaAPIClient:
+    """ollama client"""
+
     def __init__(self):
         self.default = None
 
@@ -15,8 +19,7 @@ class OllamaAPIClient:
         self.client = Client(self.default["URL"])
 
     def get_config(self):
-
-        config = utils.read_config_file()
+        """ollama config"""
 
         default = {}
         default["URL"] = config["Ollama"].get("URL", "localhost:11434")
@@ -49,6 +52,8 @@ class OllamaAPIClient:
 
 
 class Country(BaseModel):
+    """base abstract class for country model"""
+
     name: str
     capital: str
     languages: list[str]
