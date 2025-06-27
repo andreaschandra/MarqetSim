@@ -2,6 +2,7 @@
 
 import configparser
 import copy
+import csv
 import json
 import logging
 import os
@@ -333,3 +334,13 @@ class RichTextStyle:
                 return cls.ACTION_THINK_STYLE
             else:
                 return cls.ACTION_DEFAULT_STYLE
+
+def read_csv(path: str) -> list:
+    """
+    Reads a CSV file and returns a list of dictionaries, where each dictionary represents a row in the CSV file.
+    The keys of the dictionary are the column names.
+    """
+
+    with open(path, mode="r", encoding="utf-8") as csvfile:
+        reader = csv.DictReader(csvfile)
+        return [row for row in reader]

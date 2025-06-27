@@ -13,13 +13,6 @@ def create_joe_the_analyst():
     person.define("country_of_residence", "USA")
     person.define("occupation", "Data Analyst")
     person.define(
-        "occupation_description",
-        """
-        Joe is a data analyst with a strong background in statistics and data visualization. He works with large 
-        datasets to extract insights and support decision-making processes.
-        """,
-    )
-    person.define(
         "routines",
         "Joe's daily routine includes data cleaning, analysis, and reporting.",
     )
@@ -72,19 +65,6 @@ def create_joe_the_analyst():
             {
                 "skill": """Joe is also skilled in statistical analysis and has a strong understanding of data cleaning 
                 and preprocessing techniques."""
-            },
-        ],
-    )
-    person.define(
-        "relationships",
-        [
-            {
-                "relationship": """Joe has a good working relationship with his colleagues and often collaborates with 
-                data scientists and business analysts."""
-            },
-            {
-                "relationship": """Joe is also involved in a local data science community where he shares knowledge and 
-                learns from others."""
             },
         ],
     )
