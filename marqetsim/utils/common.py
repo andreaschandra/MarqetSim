@@ -335,6 +335,7 @@ class RichTextStyle:
             else:
                 return cls.ACTION_DEFAULT_STYLE
 
+
 def read_csv(path: str) -> list:
     """
     Reads a CSV file and returns a list of dictionaries, where each dictionary represents a row in the CSV file.

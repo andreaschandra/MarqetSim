@@ -32,7 +32,9 @@ def launch(file_path):
                 data_agent = common.read_csv(agent_file_path)
                 people = [create_person(profile=profile) for profile in data_agent]
             else:
-                raise ValueError("Invalid agent definition. Must be a dict or a file path.")
+                raise ValueError(
+                    "Invalid agent definition. Must be a dict or a file path."
+                )
 
         # TODO: need function to handle path image options
         options_merged = [
