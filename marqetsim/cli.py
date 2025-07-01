@@ -1,5 +1,7 @@
 """Cli Function"""
 
+from pathlib import Path
+
 import click
 
 from marqetsim.examples import create_joe_the_analyst
@@ -16,11 +18,23 @@ def launch(file_path):
         situation = data.pop("situation")
         options = data.pop("options")
         questions = data.pop("questions")
+
         if "agent" not in data:
+            print("agent is not defined, use predefined agent Joe the Analyst")
             people = [create_joe_the_analyst()]
         else:
-            one_person = create_person(profile=data.pop("agent"))
-            people = [one_person]
+            if isinstance(data["agent"], dict):
+                one_person = create_person(profile=data.pop("agent"))
+                people = [one_person]
+            elif isinstance(data["agent"], str):
+                agent_file_path = Path(data["agent"])
+                assert agent_file_path.is_file(), "Agent file does not exist."
+                data_agent = common.read_csv(agent_file_path)
+                people = [create_person(profile=profile) for profile in data_agent]
+            else:
+                raise ValueError(
+                    "Invalid agent definition. Must be a dict or a file path."
+                )
 
         # TODO: need function to handle path image options
         options_merged = [

@@ -15,11 +15,12 @@ from marqetsim.utils import anthropic_utils, common, ollama_utils, openai_utils
 from marqetsim.utils.common import break_text_at_length, repeat_on_error
 
 logger = logging.getLogger("marqetsim")
+logging.basicConfig(encoding="utf-8", level=logging.INFO)
 
 default = {}
 default["max_content_display_length"] = 1024
 default["LLM_TYPE"] = config["Simulation"].get("LLM_TYPE", "Ollama")
-print(f"Default config: {default}")
+logger.info(f"Default config: {default}")
 
 
 class Person:
@@ -38,19 +39,19 @@ class Person:
             "nationality": None,
             "city_of_residence": None,
             "country_of_residence": None,
-            "occupation": None,
-            "income_level": None,
             "education": None,
-            "employment": None,
+            "income_level": None,
+            "employment_status": None,
+            "occupation": None,
+            "industry": None,
             "marital_status": None,
-            "household": None,
+            "household_size": None,
+            "household_type": None,
             "routines": [],
-            "occupation_description": None,
             "personality_traits": [],
             "professional_interests": [],
             "personal_interests": [],
             "skills": [],
-            "relationships": [],
         }
         self._init_system_message = None
         self.current_messages = []
