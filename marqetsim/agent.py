@@ -14,13 +14,13 @@ from marqetsim import config
 from marqetsim.utils import anthropic_utils, common, ollama_utils, openai_utils
 from marqetsim.utils.common import break_text_at_length, repeat_on_error
 
-logger = logging.getLogger("tinytroupe")
+logger = logging.getLogger("marqetsim")
 logging.basicConfig(encoding="utf-8", level=logging.INFO)
 
 default = {}
 default["max_content_display_length"] = 1024
 default["LLM_TYPE"] = config["Simulation"].get("LLM_TYPE", "Ollama")
-print(f"Default config: {default}")
+logger.info(f"Default config: {default}")
 
 
 class Person:
