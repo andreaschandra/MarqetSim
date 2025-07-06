@@ -336,22 +336,6 @@ class Person:
         # let's operate on top of a copy of the configuration, because we'll need to add more variables, etc.
         template_variables = self._configuration.copy()
 
-        # Prepare additional action definitions and constraints
-        actions_definitions_prompt = ""
-        actions_constraints_prompt = ""
-        for faculty in self._mental_faculties:
-            actions_definitions_prompt += f"{faculty.actions_definitions_prompt()}\n"
-            actions_constraints_prompt += f"{faculty.actions_constraints_prompt()}\n"
-
-        # Make the additional prompt pieces available to the template.
-        # Identation here is to align with the text structure in the template.
-        template_variables["actions_definitions_prompt"] = textwrap.indent(
-            actions_definitions_prompt.strip(), "  "
-        )
-        template_variables["actions_constraints_prompt"] = textwrap.indent(
-            actions_constraints_prompt.strip(), "  "
-        )
-
         # RAI prompt components, if requested
         template_variables = common.add_rai_template_variables_if_enabled(
             template_variables
