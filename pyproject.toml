@@ -27,11 +27,21 @@ dependencies = [
     "openai >= 1.40",
     "tiktoken",
     "msal",
-    "rich", "requests", "chevron",
-    "llama-index", "llama-index-embeddings-huggingface", "llama-index-readers-web",
-    "pypandoc", "docx", "markdown",
+    "rich",
+    "requests",
+    "chevron",
+    "llama-index",
+    "llama-index-embeddings-huggingface",
+    "llama-index-readers-web",
+    "pypandoc",
+    "docx",
+    "markdown",
     "jupyter",
-    "pydantic", "anthropic"
+    "pydantic",
+    "anthropic",
+    "tox>=4.27.0",
+    "isort>=6.0.1",
+    "black>=25.1.0",
 ]
 
 [project.scripts]
