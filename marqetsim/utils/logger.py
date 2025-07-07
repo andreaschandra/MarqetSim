@@ -1,10 +1,14 @@
+"""Logger utility for MarqetSim."""
+
 import re
 from logging import Formatter, Logger, StreamHandler, handlers
 from pathlib import Path
+
 from colorama import Fore, Style
 
 
 class ColorFormatter(Formatter):
+    """Formatter that adds color to log messages based on the level."""
 
     COLORS = {
         "DEBUG": Fore.LIGHTCYAN_EX,
@@ -22,6 +26,8 @@ class ColorFormatter(Formatter):
 
 
 class RecordFormater(Formatter):
+    """Formatter that removes ANSI escape sequences from log messages."""
+
     def format(self, record):
         ansi_escape = re.compile(r"\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])")
 
@@ -30,6 +36,8 @@ class RecordFormater(Formatter):
 
 
 class LogCreator(Logger):
+    """Log Creator that sets logging with color formatting and file output."""
+
     def __init__(self, name: str, level="DEBUG", log_file: Path = None):
         super().__init__(name, level)
 
