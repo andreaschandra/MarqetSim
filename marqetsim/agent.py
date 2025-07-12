@@ -755,6 +755,7 @@ class SemanticMemory(TinyMemory):
     ) -> None:
         self.based_knowledge = based_knowledge or MarqKnowledge()
 
+        self.documents = []
         self.documents_paths = []
         self.documents_web_urls = []
         self.filename_to_document = {}
@@ -795,7 +796,7 @@ class SemanticMemory(TinyMemory):
         """
         Retrieves all values from memory that are relevant to a given target.
         """
-        results = self.marq_knowledge.retrieve(relevance_target, top_k)
+        results = self.based_knowledge.retrieve(relevance_target, top_k)
         retrieved = []
         for doc, meta, dist in zip(
             results["documents"][0], results["metadatas"][0], results["distances"][0]
@@ -859,7 +860,9 @@ class SemanticMemory(TinyMemory):
             doc_id = str(uuid.uuid4())
             file_name = doc.metadata.get("file_name", "unknown")
             self.filename_to_document[file_name] = doc
-            self.vector_db.add_document(doc.text, doc_id, {"file_name": file_name})
+            self.based_knowledge.add_document(
+                doc.text, doc_id, {"file_name": file_name}
+            )
 
     def add_web_urls(self, web_urls: list) -> None:
         """
@@ -885,7 +888,7 @@ class SemanticMemory(TinyMemory):
         for doc in documents:
             doc.text = common.sanitize_raw_string(doc.text)
             doc_id = str(uuid.uuid4())
-            self.vector_db.add_document(doc.text, doc_id, {"source": "web"})
+            self.based_knowledge.add_document(doc.text, doc_id, {"source": "web"})
 
     def _add_documents(self, new_documents, doc_to_name_func=None) -> list:
         """
@@ -936,4 +939,7 @@ class SemanticMemory(TinyMemory):
         return None
 
     def actions_definitions_prompt(self):
+        return None
+
+    def process_action(self, agent, action):
         return None
