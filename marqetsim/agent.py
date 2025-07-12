@@ -10,6 +10,8 @@ from typing import Any
 
 import chevron
 import rich
+from llama_index.core import SimpleDirectoryReader
+from llama_index.readers.web import SimpleWebPageReader
 
 from marqetsim import config
 from marqetsim.knowledge import MarqKnowledge
@@ -308,28 +310,28 @@ class Person:
         # TODO actually, figure out another way to update agent state without "changing history"
 
         # reset system message
-        logger.debug(
-            ">>>>>============= reset_prompt: set self.current_messages ============="
-        )
+        logger.debug(">>>>>=== reset_prompt: set self.current_messages ====")
         self.current_messages = [{"role": "user", "content": self._init_system_message}]
 
         # sets up the actual interaction messages to use for prompting
         logger.debug(
-            ">>>>>============= reset_prompt: add self.current_messages with retrieve_recent_memories ============="
+            ">>>>>=== reset_prompt: add self.current_messages with retrieve_recent_memories ==="
         )
         self.current_messages += self.retrieve_recent_memories()
 
-        # add a final user message, which is neither stimuli or action, to instigate the agent to act properly
+        # add a final user message, which is neither stimuli or action,
+        # to instigate the agent to act properly
         logger.debug(
-            ">>>>>============= reset_prompt: add self.current_messages with hard coded ============="
+            ">>>>>=== reset_prompt: add self.current_messages with hard coded ==="
         )
         self.current_messages.append(
             {
                 "role": "user",
-                "content": "Now you **must** generate a sequence of actions following your interaction directives, "
-                + "and complying with **all** instructions and contraints related to the action you use."
+                "content": "**must** gen actions sequence following your interaction directives, "
+                + "and comply **all** instructions and contraints related to the action you use."
                 + "DO NOT repeat the exact same action more than once in a row!"
-                + "These actions **MUST** be rendered following the JSON specification perfectly, including all required keys (even if their value is empty), **ALWAYS**.",
+                + "These actions **MUST** be rendered following the JSON specification perfectly,"
+                + "including all required keys (even if their value is empty), **ALWAYS**.",
             }
         )
 
@@ -339,7 +341,8 @@ class Person:
         with open(self._prompt_template_path, encoding="utf-8", mode="r") as f:
             agent_prompt_template = f.read()
 
-        # let's operate on top of a copy of the configuration, because we'll need to add more variables, etc.
+        # let's operate on top of a copy of the configuration,
+        # because we'll need to add more variables, etc.
         template_variables = self._configuration.copy()
 
         # Prepare additional action definitions and constraints
@@ -609,8 +612,10 @@ class Person:
 
 class EpisodicMemory(TinyMemory):
     """
-    Provides episodic memory capabilities to an agent. Cognitively, episodic memory is the ability to remember specific events,
-    or episodes, in the past. This class provides a simple implementation of episodic memory, where the agent can store and retrieve
+    Provides episodic memory capabilities to an agent. Cognitively, episodic memory is
+    the ability to remember specific events,
+    or episodes, in the past. This class provides a simple implementation of episodic memory,
+    where the agent can store and retrieve
     messages from memory.
 
     Subclasses of this class can be used to provide different memory implementations.
@@ -852,7 +857,6 @@ class SemanticMemory(TinyMemory):
         """
         Adds a path to a folder with documents used for semantic memory.
         """
-        from llama_index.core import SimpleDirectoryReader
 
         documents = SimpleDirectoryReader(documents_path).load_data()
         for doc in documents:
@@ -881,7 +885,6 @@ class SemanticMemory(TinyMemory):
         """
         # we do it like this because the add_web_urls could run scrapes in parallel, so it is better
         # to implement this one in terms of the other
-        from llama_index.readers.web import SimpleWebPageReader
 
         # self.add_web_urls([web_url])
         documents = SimpleWebPageReader(html_to_text=True).load_data(web_urls)

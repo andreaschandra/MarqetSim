@@ -1,8 +1,10 @@
+"""Semantic Test"""
+
 import os
 
 from marqetsim.agent import SemanticMemory
 
-BASED_PATH = os.path.join("test", "document_test")
+BASED_PATH = os.path.join("..", "test", "document_test")
 document_titles = ["doc1.txt", "doc2.txt"]
 all_doc_paths = [os.path.join(BASED_PATH, f) for f in document_titles]
 s_memory = SemanticMemory(documents_paths=all_doc_paths)
