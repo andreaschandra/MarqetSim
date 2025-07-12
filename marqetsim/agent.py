@@ -407,6 +407,7 @@ class Person:
             self._configuration["current_emotions"] = emotions
 
         # update relevant memories for the current situation
+
         current_memory_context = self.retrieve_relevant_memories_for_current_context()
         self._configuration["current_memory_context"] = current_memory_context
 
@@ -930,3 +931,9 @@ class SemanticMemory(TinyMemory):
         # Reload documents and web URLs into MarqKnowledge
         self.add_documents_paths(self.documents_paths)
         self.add_web_urls(self.documents_web_urls)
+
+    def actions_constraints_prompt(self):
+        return None
+
+    def actions_definitions_prompt(self):
+        return None

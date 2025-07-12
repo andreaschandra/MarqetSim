@@ -14,3 +14,4 @@ anthropic==0.54.0
 click==8.1.8
 tox
 llama-index==0.12.3
+chromadb==1.0.15
