@@ -756,9 +756,16 @@ class SemanticMemory(TinyMemory):
 
     ## TODO: explain what the input of based_knowledge would be.
     def __init__(
-        self, documents_paths: list = None, web_urls: list = None, based_knowledge=None
+        self,
+        documents_paths: list = None,
+        web_urls: list = None,
+        based_knowledge=None,
+        name=None,
+        persistent_path=None,
     ) -> None:
-        self.based_knowledge = based_knowledge or MarqKnowledge()
+        self.based_knowledge = based_knowledge or MarqKnowledge(
+            collection_name=name, persist_directory=persistent_path
+        )
 
         self.documents = []
         self.documents_paths = []
@@ -858,14 +865,14 @@ class SemanticMemory(TinyMemory):
         Adds a path to a folder with documents used for semantic memory.
         """
 
-        documents = SimpleDirectoryReader(documents_path).load_data()
+        documents = SimpleDirectoryReader(input_dir=documents_path).load_data()
         for doc in documents:
-            doc.text = common.sanitize_raw_string(doc.text)
+            sanitized_text = common.sanitize_raw_string(doc.text)
             doc_id = str(uuid.uuid4())
             file_name = doc.metadata.get("file_name", "unknown")
             self.filename_to_document[file_name] = doc
             self.based_knowledge.add_document(
-                doc.text, doc_id, {"file_name": file_name}
+                sanitized_text, doc_id, {"file_name": file_name}
             )
 
     def add_web_urls(self, web_urls: list) -> None:
