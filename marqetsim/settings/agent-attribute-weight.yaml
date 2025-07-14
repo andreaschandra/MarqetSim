@@ -1,0 +1,57 @@
+agent:
+  age:
+    18-24: 0.2
+    25-34: 0.2
+    35-44: 0.2
+    45-54: 0.2
+    55-100: 0.2
+  gender:
+    male: 0.5
+    female: 0.5
+  nationality:
+    Indonesian: 0.2
+    Malaysian: 0.2
+    Singaporean: 0.2
+    Thai: 0.2
+    Japanese: 0.2
+  country_of_residence:
+    indonesia: 0.2
+    malaysia: 0.2
+    singapore: 0.2
+    thailand: 0.2
+    japan: 0.2  
+  city_of_residence:
+    jakarta: 0.2
+    kuala_Lumpur: 0.2
+    singapore: 0.2
+    bangkok: 0.2
+    tokyo: 0.2
+  education:
+    senior_high: 0.25
+    bachelor: 0.25
+    master: 0.25
+    phd: 0.25
+  income_level:
+    low: 0.2
+    middle: 0.4
+    high: 0.4
+  employment_status:
+    employed: 0.6
+    unemployed: 0.2
+    student: 0.2
+  marital_status:
+    single: 0.4
+    married: 0.4
+    divorced: 0.1
+    widowed: 0.1
+  household_size:
+    1: 0.25
+    2-3: 0.25
+    4:-5: 0.25
+    6-10: 0.25
+  household_type:
+    single: 0.25
+    nuclear: 0.25
+    single_parent: 0.25
+    childess_couple: 0.25
+  
