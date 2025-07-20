@@ -50,6 +50,7 @@ dependencies = [
     "tox>=4.27.0",
     "isort>=6.0.1",
     "black>=25.1.0",
+    "pip"
 ]
 
 [project.scripts]
