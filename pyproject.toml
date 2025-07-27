@@ -6,6 +6,14 @@ build-backend = "setuptools.build_meta"
 packages = ["marqetsim"]
 include-package-data = true
 
+[tool.commitizen]
+name = "cz_conventional_commits"
+tag_format = "$version"
+version_scheme = "pep440"
+version_provider = "uv"
+update_changelog_on_bump = true
+major_version_zero = true
+
 [project]
 name = "marqetsim"
 version = "0.1.2"
@@ -44,6 +52,7 @@ dependencies = [
     "tox>=4.27.0",
     "isort>=6.0.1",
     "black>=25.1.0",
+    "pip"
 ]
 
 [project.scripts]

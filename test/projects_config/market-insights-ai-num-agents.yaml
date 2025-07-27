@@ -1,0 +1,71 @@
+project:
+  name: Market Insights AI
+  version: 0.1.0
+  owner: Tom
+  created_at: 2025-05-05
+
+situation: "You decided you want to visit Europe and you are planning your next vacations. You start by searching for good deals as well as good ideas."
+
+questions: "Can you please evaluate these Bing ads for me? Which one convices you more to buy their particular offering? Select **ONLY** one. Please explain your reasoning, based on your background and personality."
+
+options:
+  - type: text
+    content: "TOKYO ADVENTURE EXPRESS - Solo Explorer Edition
+            Discover Japan Your Way - Freedom Meets Culture!
+            Dive into Japan's vibrant street culture, from bustling Shibuya crossings to serene temple gardens. Perfect for the independent spirit seeking authentic experiences and Instagram-worthy moments.
+            Duration: 8 Days / 7 Nights
+            Price: $1,899 per person
+            Destinations: Tokyo (4 nights) → Kyoto (2 nights) → Osaka (1 night)
+            Highlights:
+              Harajuku street fashion district exploration
+              Traditional ryokan stay in Kyoto
+              Golden Pavilion temple visit
+              Dotonbori food crawl in Osaka
+              Tokyo nightlife district tours
+              Bullet train experience (JR Pass included)
+
+
+            Includes: Accommodation in modern hostels/budget hotels, breakfast daily, guided temple tours, JR Pass, airport transfers
+            "
+  - type: text
+    content: "MAGICAL JAPAN FAMILY ADVENTURE
+            Creating Memories Together in the Land of Wonder!
+            Experience Japan through your child's eyes - where ancient traditions meet modern marvels. Safe, fun, and educational adventures designed for families.
+            Duration: 10 Days / 9 Nights
+            Price: $3,799 for 2 people (1 adult + 1 child under 12)
+            Destinations: Tokyo (4 nights) → Mount Fuji Area (2 nights) → Kyoto (2 nights) → Nara (1 night)
+            Highlights:
+              Tokyo Disneyland full day pass
+              Interactive Robot Restaurant show
+              Kid-friendly sushi making class
+              Bamboo forest walk in Arashiyama
+              Deer feeding in Nara Park
+              Mount Fuji scenic views and lake activities
+              Traditional kimono fitting experience
+
+            Includes: Family-friendly hotels, all breakfasts, 5 lunches, entrance fees, English-speaking guide, bullet train tickets, airport transfers
+            Child Benefits: Free activities for kids under 6, child-safe meal options
+            "
+  - type: text
+    content: "GOLDEN YEARS JAPAN DISCOVERY
+            Elegant Japan at a Relaxed Pace - Comfort Meets Culture!
+            Thoughtfully crafted for mature travelers who appreciate comfort, history, and authentic cultural experiences without the rush.
+            Duration: 12 Days / 11 Nights
+            Price: $4,299 per person (double occupancy)
+            Destinations: Tokyo (3 nights) → Hakone (2 nights) → Takayama (2 nights) → Kyoto (3 nights) → Nara (1 night)
+            
+            Highlights:
+              Luxury onsen (hot spring) resort experience
+              Traditional kaiseki multi-course dinners
+              Private tea ceremony with master
+              Historic Gion district guided walk
+              Scenic train ride through Japanese Alps
+              Traditional craft workshops (pottery/calligraphy)
+              Cherry blossom gardens (seasonal)
+              Comfortable pace with rest days
+
+            Includes: 4-star traditional ryokans and hotels, all meals, private transportation, dedicated English-speaking guide, cultural workshops, medical assistance support
+            Senior Benefits: Mobility assistance available, comfortable walking tours, flexible itinerary options
+            "
+
+agent: 2

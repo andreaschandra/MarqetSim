@@ -48,7 +48,6 @@ class Person:
             "income_level": None,
             "employment_status": None,
             "occupation": None,
-            "industry": None,
             "marital_status": None,
             "household_size": None,
             "household_type": None,
