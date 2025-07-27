@@ -1,15 +1,20 @@
 """Agent configuration and management."""
 
+import copy
 import json
 import logging
 import os
 import textwrap
+import uuid
 from typing import Any
 
 import chevron
 import rich
+from llama_index.core import SimpleDirectoryReader
+from llama_index.readers.web import SimpleWebPageReader
 
 from marqetsim import config
+from marqetsim.knowledge import MarqKnowledge
 from marqetsim.schema import CognitiveActionModel, TinyMemory
 from marqetsim.utils import anthropic_utils, common, ollama_utils, openai_utils
 from marqetsim.utils.common import break_text_at_length, repeat_on_error
@@ -158,11 +163,13 @@ class Person:
     def act(self, return_actions=False):
         """
         Acts in the environment and updates its internal cognitive state.
-        Either acts until the agent is done and needs additional stimuli, or acts a fixed number of times,
+        Either acts until the agent is done and needs additional stimuli,
+        or acts a fixed number of times,
         but not both.
 
         Args:
-            until_done (bool): Whether to keep acting until the agent is done and needs additional stimuli.
+            until_done (bool): Whether to keep acting until the agent is done
+            and needs additional stimuli.
             n (int): The number of actions to perform. Defaults to None.
             return_actions (bool): Whether to return the actions or not. Defaults to False.
         """
@@ -170,7 +177,8 @@ class Person:
         contents = []
 
         # Aux function to perform exactly one action.
-        # Occasionally, the model will return JSON missing important keys, so we just ask it to try again
+        # Occasionally, the model will return JSON missing important keys,
+        # so we just ask it to try again
         @repeat_on_error(retries=5, exceptions=[KeyError])
         def aux_act_once():
 
@@ -213,7 +221,8 @@ class Person:
                     )
 
                 #
-                # Some actions induce an immediate stimulus or other side-effects. We need to process them here, by means of the mental faculties.
+                # Some actions induce an immediate stimulus or other side-effects.
+                # We need to process them here, by means of the mental faculties.
                 #
                 for faculty in self._mental_faculties:
                     faculty.process_action(self, action)
@@ -224,12 +233,12 @@ class Person:
             # check if the agent is acting without ever stopping
             if len(contents) > Person.MAX_ACTIONS_BEFORE_DONE:
                 logger.warning(
-                    f"[{self.name}] Agent {self.name} is acting without ever stopping. This may be a bug. Let's stop it here anyway."
+                    f"[{self.name}] Agent {self.name} is not stopping. This may be a bug."
                 )
                 break
 
             if len(contents) > 4:
-                # just some minimum number of actions to check for repetition, could be anything >= 3
+                # just minimum number of actions to check for repetition, could be anything >= 3
                 # if the last three actions were the same, then we are probably in a loop
                 if (
                     contents[-1]["action"]
@@ -237,7 +246,7 @@ class Person:
                     == contents[-3]["action"]
                 ):
                     logger.warning(
-                        f"[{self.name}] Agent {self.name} is acting in a loop. This may be a bug. Let's stop it here anyway."
+                        f"[{self.name}] Agent {self.name} is acting in a loop. This may be a bug."
                     )
                     break
 
@@ -265,9 +274,7 @@ class Person:
         logger.debug(f"[{self.name}] Messages: {messages} \n\n")
 
         if default["LLM_TYPE"] == "Ollama":
-            logger.debug(
-                f">>>>============= ollama_client.send_message() ============="
-            )
+            logger.debug(">>>>============= ollama_client.send_message() =============")
             next_message = self.ollama_client.send_message(
                 messages, response_format=CognitiveActionModel
             )
@@ -283,8 +290,9 @@ class Person:
                 messages, response_format=CognitiveActionModel
             )
         else:
+            support_types = "Supported types are: Ollama, OpenAI, Anthropic."
             raise ValueError(
-                f"Unknown LLM type: {default['LLM_TYPE']}. Supported types are: Ollama, OpenAI, Anthropic."
+                f"Unknown LLM type: {default['LLM_TYPE']}. {support_types}"
             )
 
         logger.debug(f"[{self.name}] Received message: {next_message}\n\n")
@@ -301,28 +309,28 @@ class Person:
         # TODO actually, figure out another way to update agent state without "changing history"
 
         # reset system message
-        logger.debug(
-            ">>>>>============= reset_prompt: set self.current_messages ============="
-        )
+        logger.debug(">>>>>=== reset_prompt: set self.current_messages ====")
         self.current_messages = [{"role": "user", "content": self._init_system_message}]
 
         # sets up the actual interaction messages to use for prompting
         logger.debug(
-            ">>>>>============= reset_prompt: add self.current_messages with retrieve_recent_memories ============="
+            ">>>>>=== reset_prompt: add self.current_messages with retrieve_recent_memories ==="
         )
         self.current_messages += self.retrieve_recent_memories()
 
-        # add a final user message, which is neither stimuli or action, to instigate the agent to act properly
+        # add a final user message, which is neither stimuli or action,
+        # to instigate the agent to act properly
         logger.debug(
-            ">>>>>============= reset_prompt: add self.current_messages with hard coded ============="
+            ">>>>>=== reset_prompt: add self.current_messages with hard coded ==="
         )
         self.current_messages.append(
             {
                 "role": "user",
-                "content": "Now you **must** generate a sequence of actions following your interaction directives, "
-                + "and complying with **all** instructions and contraints related to the action you use."
+                "content": "**must** gen actions sequence following your interaction directives, "
+                + "and comply **all** instructions and contraints related to the action you use."
                 + "DO NOT repeat the exact same action more than once in a row!"
-                + "These actions **MUST** be rendered following the JSON specification perfectly, including all required keys (even if their value is empty), **ALWAYS**.",
+                + "These actions **MUST** be rendered following the JSON specification perfectly,"
+                + "including all required keys (even if their value is empty), **ALWAYS**.",
             }
         )
 
@@ -332,7 +340,8 @@ class Person:
         with open(self._prompt_template_path, encoding="utf-8", mode="r") as f:
             agent_prompt_template = f.read()
 
-        # let's operate on top of a copy of the configuration, because we'll need to add more variables, etc.
+        # let's operate on top of a copy of the configuration,
+        # because we'll need to add more variables, etc.
         template_variables = self._configuration.copy()
 
         # RAI prompt components, if requested
@@ -384,6 +393,7 @@ class Person:
             self._configuration["current_emotions"] = emotions
 
         # update relevant memories for the current situation
+
         current_memory_context = self.retrieve_relevant_memories_for_current_context()
         self._configuration["current_memory_context"] = current_memory_context
 
@@ -585,8 +595,10 @@ class Person:
 
 class EpisodicMemory(TinyMemory):
     """
-    Provides episodic memory capabilities to an agent. Cognitively, episodic memory is the ability to remember specific events,
-    or episodes, in the past. This class provides a simple implementation of episodic memory, where the agent can store and retrieve
+    Provides episodic memory capabilities to an agent. Cognitively, episodic memory is
+    the ability to remember specific events,
+    or episodes, in the past. This class provides a simple implementation of episodic memory,
+    where the agent can store and retrieve
     messages from memory.
 
     Subclasses of this class can be used to provide different memory implementations.
@@ -716,42 +728,52 @@ class EpisodicMemory(TinyMemory):
 
 class SemanticMemory(TinyMemory):
     """
-    Semantic memory is the memory of meanings, understandings, and other concept-based knowledge unrelated to specific experiences.
-    It is not ordered temporally, and it is not about remembering specific events or episodes. This class provides a simple implementation
+    Semantic memory is the memory of meanings, understandings, and other concept-based knowledge
+    unrelated to specific experiences.
+    It is not ordered temporally, and it is not about remembering specific events or episodes.
+    This class provides a simple implementation
     of semantic memory, where the agent can store and retrieve semantic information.
     """
 
     suppress_attributes_from_serialization = ["index"]
 
-    def __init__(self, documents_paths: list = None, web_urls: list = None) -> None:
-        self.index = None
-
-        self.documents_paths = []
-        self.documents_web_urls = []
+    ## TODO: explain what the input of based_knowledge would be.
+    def __init__(
+        self,
+        documents_paths: list = None,
+        web_urls: list = None,
+        based_knowledge=None,
+        name=None,
+        persistent_path=None,
+    ) -> None:
+        self.based_knowledge = based_knowledge or MarqKnowledge(
+            collection_name=name, persist_directory=persistent_path
+        )
 
         self.documents = []
+        self.documents_paths = []
+        self.documents_web_urls = []
         self.filename_to_document = {}
 
-        # load document paths and web urls
         self.add_documents_paths(documents_paths)
-
-        if web_urls is not None:
+        if web_urls:
             self.add_web_urls(web_urls)
 
     def _preprocess_value_for_storage(self, value: dict) -> Any:
         engram = None
+        ts = value["simulation_timestamp"]
 
         if value["type"] == "action":
             engram = (
-                f"# Fact\n"
-                + f"I have performed the following action at date and time {value['simulation_timestamp']}:\n\n"
+                "# Fact\n"
+                + f"I have performed the following action at date and time {ts}:\n\n"
                 + f" {value['content']}"
             )
 
         elif value["type"] == "stimulus":
             engram = (
-                f"# Stimulus\n"
-                + f"I have received the following stimulus at date and time {value['simulation_timestamp']}:\n\n"
+                "# Stimulus\n"
+                + f"I have received the following stimulus at date and time {ts}:\n\n"
                 + f" {value['content']}"
             )
 
@@ -760,28 +782,24 @@ class SemanticMemory(TinyMemory):
         return engram
 
     def _store(self, value: Any) -> None:
-        engram_doc = Document(text=str(value))
-        self._add_document(engram_doc)
+        # engram_doc = Document(text=str(value))
+        engram_text = str(value)
+        doc_id = str(uuid.uuid4())
+        self.based_knowledge.add_document(engram_text, doc_id)
 
     def retrieve_relevant(self, relevance_target: str, top_k=20) -> list:
         """
         Retrieves all values from memory that are relevant to a given target.
         """
-        if self.index is not None:
-            retriever = self.index.as_retriever(similarity_top_k=top_k)
-            nodes = retriever.retrieve(relevance_target)
-        else:
-            nodes = []
-
+        results = self.based_knowledge.retrieve(relevance_target, top_k)
         retrieved = []
-        for node in nodes:
-            content = "SOURCE: " + node.metadata.get("file_name", "(unknown)")
-            content += "\n" + "SIMILARITY SCORE:" + str(node.score)
-            content += "\n" + "RELEVANT CONTENT:" + node.text
+        for doc, meta, dist in zip(
+            results["documents"][0], results["metadatas"][0], results["distances"][0]
+        ):
+            content = f"SOURCE: {meta.get('file_name', '(unknown)')}\n"
+            content += f"DISTANCE: {dist:.4f}\n"
+            content += f"RELEVANT CONTENT:\n{doc}"
             retrieved.append(content)
-
-            logger.debug(f"Semantic memory retrieved: {content[:200]}")
-
         return retrieved
 
     def retrieve_document_content_by_name(self, document_name: str) -> str:
@@ -830,74 +848,71 @@ class SemanticMemory(TinyMemory):
         Adds a path to a folder with documents used for semantic memory.
         """
 
-        if documents_path not in self.documents_paths:
-            self.documents_paths.append(documents_path)
-            new_documents = SimpleDirectoryReader(documents_path).load_data()
-            self._add_documents(new_documents, lambda doc: doc.metadata["file_name"])
-
-    def add_document_path(self, document_path: str) -> None:
-        """
-        Adds a path to a document used for semantic memory.
-        """
-        new_documents = SimpleDirectoryReader(input_files=[document_path]).load_data()
-        logger.debug(
-            f"Adding the following document to semantic memory: {new_documents}"
-        )
-        self._add_documents(new_documents, lambda doc: doc.metadata["file_name"])
+        documents = SimpleDirectoryReader(input_dir=documents_path).load_data()
+        for doc in documents:
+            sanitized_text = common.sanitize_raw_string(doc.text)
+            doc_id = str(uuid.uuid4())
+            file_name = doc.metadata.get("file_name", "unknown")
+            self.filename_to_document[file_name] = doc
+            self.based_knowledge.add_document(
+                sanitized_text, doc_id, {"file_name": file_name}
+            )
 
     def add_web_urls(self, web_urls: list) -> None:
         """
         Adds the data retrieved from the specified URLs to documents used for semantic memory.
         """
-        filtered_web_urls = [
-            url for url in web_urls if url not in self.documents_web_urls
-        ]
-        self.documents_web_urls += filtered_web_urls
 
-        if len(filtered_web_urls) > 0:
-            new_documents = SimpleWebPageReader(html_to_text=True).load_data(
-                filtered_web_urls
-            )
-            self._add_documents(new_documents, lambda doc: doc.id_)
+        filtered_urls = [url for url in web_urls if url not in self.documents_web_urls]
+        self.documents_web_urls += filtered_urls
 
-    def add_web_url(self, web_url: str) -> None:
+        if filtered_urls:
+            self.add_web_urls(filtered_urls)
+
+    def add_web_url(self, web_urls: str) -> None:
         """
         Adds the data retrieved from the specified URL to documents used for semantic memory.
         """
         # we do it like this because the add_web_urls could run scrapes in parallel, so it is better
         # to implement this one in terms of the other
-        self.add_web_urls([web_url])
 
-    def _add_document(self, document, doc_to_name_func=None) -> None:
-        """
-        Adds a document to the semantic memory.
-        """
-        self._add_documents([document], doc_to_name_func)
+        # self.add_web_urls([web_url])
+        documents = SimpleWebPageReader(html_to_text=True).load_data(web_urls)
+        for doc in documents:
+            doc.text = common.sanitize_raw_string(doc.text)
+            doc_id = str(uuid.uuid4())
+            self.based_knowledge.add_document(doc.text, doc_id, {"source": "web"})
 
     def _add_documents(self, new_documents, doc_to_name_func=None) -> list:
         """
-        Adds documents to the semantic memory.
+        Adds multiple documents by calling _add_document on each.
         """
-        # index documents by name
-        if len(new_documents) > 0:
-            # add the new documents to the list of documents
-            self.documents += new_documents
+        for document in new_documents:
+            self._add_document(document, doc_to_name_func)
 
-            # process documents individually too
-            for document in new_documents:
+    def _add_document(self, document, doc_to_name_func=None) -> None:
+        """
+        Adds a single document to the semantic memory.
+        """
+        # Sanitize text
+        document.text = common.sanitize_raw_string(document.text)
 
-                # out of an abundance of caution, we sanitize the text
-                document.text = common.sanitize_raw_string(document.text)
+        # Determine document name if function provided
+        name = None
+        if doc_to_name_func is not None:
+            name = doc_to_name_func(document)
+            self.filename_to_document[name] = document
 
-                if doc_to_name_func is not None:
-                    name = doc_to_name_func(document)
-                    self.filename_to_document[name] = document
+        # Generate unique doc_id
+        doc_id = str(uuid.uuid4())
 
-            # index documents for semantic retrieval
-            if self.index is None:
-                self.index = VectorStoreIndex.from_documents(self.documents)
-            else:
-                self.index.refresh(self.documents)
+        # Add to vector DB
+        self.marq_knowledge.add_document(
+            document.text, doc_id, metadata={"file_name": name}
+        )
+
+        # Also keep in documents list
+        self.documents.append(document)
 
     ###########################################################
     # IO
@@ -906,6 +921,18 @@ class SemanticMemory(TinyMemory):
     def _post_deserialization_init(self):
         super()._post_deserialization_init()
 
-        self.index = None
+        # Reset or recreate MarqKnowledge instance if needed
+        self.based_knowledge = MarqKnowledge()
+
+        # Reload documents and web URLs into MarqKnowledge
         self.add_documents_paths(self.documents_paths)
         self.add_web_urls(self.documents_web_urls)
+
+    def actions_constraints_prompt(self):
+        return None
+
+    def actions_definitions_prompt(self):
+        return None
+
+    def process_action(self, agent, action):
+        return None
