@@ -4,10 +4,10 @@ from pathlib import Path
 
 import click
 
+from marqetsim.agent_generator import generate_coherent_person
 from marqetsim.examples import create_joe_the_analyst
 from marqetsim.simulator import create_person
 from marqetsim.utils import common
-from marqetsim.agent_generator import generate_coherent_person
 
 
 @click.command()
@@ -43,7 +43,6 @@ def launch(file_path):
                     "Invalid agent definition. Must be a dict or a file path."
                 )
 
-        # TODO: need function to handle path image options
         options_merged = [
             f"#option-{i+1} " + opt.pop("content") for i, opt in enumerate(options)
         ]

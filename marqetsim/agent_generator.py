@@ -1,6 +1,7 @@
 """Function to geenerate agent."""
 
 import random
+
 import pandas as pd
 
 # Full name
