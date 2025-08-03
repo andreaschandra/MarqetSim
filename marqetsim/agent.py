@@ -4,6 +4,7 @@ import copy
 import json
 import logging
 import os
+import sys
 import textwrap
 import uuid
 from typing import Any
@@ -18,14 +19,8 @@ from marqetsim.knowledge import MarqKnowledge
 from marqetsim.schema import CognitiveActionModel, TinyMemory
 from marqetsim.utils import anthropic_utils, common, ollama_utils, openai_utils
 from marqetsim.utils.common import break_text_at_length, repeat_on_error
-
-logger = logging.getLogger("marqetsim")
-logging.basicConfig(encoding="utf-8", level=logging.INFO)
-
-default = {}
-default["max_content_display_length"] = 1024
-default["LLM_TYPE"] = config["Simulation"].get("LLM_TYPE", "Ollama")
-logger.info(f"Default config: {default}")
+from marqetsim.utils.logger import LogCreator
+from marqetsim.environment import Environment
 
 
 class Person:
@@ -35,32 +30,20 @@ class Person:
     MAX_ACTIONS_BEFORE_DONE = 15
     communication_display: bool = True
 
-    def __init__(self, name):
+    def __init__(self, name, logger=LogCreator("marqetsim", level="DEBUG")):
         self.name = name
-        self._configuration = {
-            "name": self.name,
-            "age": None,
-            "gender": None,
-            "nationality": None,
-            "city_of_residence": None,
-            "country_of_residence": None,
-            "education": None,
-            "income_level": None,
-            "employment_status": None,
-            "occupation": None,
-            "marital_status": None,
-            "household_size": None,
-            "household_type": None,
-            "routines": [],
-            "personality_traits": [],
-            "professional_interests": [],
-            "personal_interests": [],
-            "skills": [],
-        }
+        self._configuration = {"persona": {}}
         self._init_system_message = None
         self.current_messages = []
         self._mental_faculties = []
         self._displayed_communications_buffer = []
+        self.logger = logger
+
+        # default
+        self.default = {}
+        self.default["max_content_display_length"] = 1024
+        self.default["LLM_TYPE"] = config["Simulation"].get("LLM_TYPE", "Ollama")
+        self.logger.info(f"Default config: {self.default}")
 
         # The list of actions that this agent has performed so far, but which have not been
         # consumed by the environment yet.
@@ -71,11 +54,12 @@ class Person:
         )
 
         # the current environment in which the agent is acting
-        self.environment = None
+        self.environment = Environment()
+        self._configuration["current_datetime"] = self.iso_datetime()
 
         # Memory
         self.episodic_memory = EpisodicMemory()
-        self.semantic_memory = SemanticMemory()
+        self.semantic_memory = SemanticMemory(name="marq-knowledge")
 
         # LLM Provider
         self.ollama_client = ollama_utils.OllamaAPIClient()
@@ -84,15 +68,9 @@ class Person:
     def define(self, key, value):
         """Define Person attributes."""
         if isinstance(value, str):
-            if key in self._configuration:
-                self._configuration[key] = textwrap.dedent(value)
-            else:
-                raise ValueError(f"Invalid key: {key}.")
+            self._configuration["persona"][key] = textwrap.dedent(value)
         else:
-            if key in self._configuration:
-                self._configuration[key] = value
-            else:
-                raise ValueError(f"Invalid key: {key}.")
+            self._configuration["persona"][key] = value
 
     def set_context(self, context):
         """Set the context for the Person."""
@@ -155,7 +133,7 @@ class Person:
     def store_in_memory(self, data):
         """Store data in memory."""
         # Simulate storing data in memory
-        logger.debug(f"Storing data: {data}\n\n")
+        self.logger.debug(f"Storing data: {data}\n\n")
         self.episodic_memory.store(data)
 
     # ============== act ==============
@@ -182,15 +160,15 @@ class Person:
         @repeat_on_error(retries=5, exceptions=[KeyError])
         def aux_act_once():
 
-            logger.debug(">>>============= _produce_message() =============")
+            self.logger.debug(">>>============= _produce_message() =============")
             role, content = self._produce_message()
 
             for subcontent in content:
                 action = subcontent["action"]
                 cognitive_state = subcontent["cognitive_state"]
-                logger.debug(f"{self.name}'s action: {action}")
+                self.logger.debug(f"{self.name}'s action: {action}")
 
-                logger.debug(">>>============= store_in_memory() =============")
+                self.logger.debug(">>>============= store_in_memory() =============")
                 self.store_in_memory(
                     {
                         "role": role,
@@ -201,7 +179,9 @@ class Person:
                 )
 
                 self._actions_buffer.append(action)
-                logger.debug(">>>============= _update_cognitive_state() =============")
+                self.logger.debug(
+                    ">>>============= _update_cognitive_state() ============="
+                )
                 self._update_cognitive_state(
                     goals=cognitive_state["goals"],
                     attention=cognitive_state["attention"],
@@ -210,7 +190,9 @@ class Person:
 
                 contents.append(subcontent)
 
-                logger.debug(">>>============= _display_communication() =============")
+                self.logger.debug(
+                    ">>>============= _display_communication() ============="
+                )
                 if Person.communication_display:
                     self._display_communication(
                         role=role,
@@ -228,7 +210,7 @@ class Person:
                     faculty.process_action(self, action)
 
         while (len(contents) == 0) or (not contents[-1]["action"]["type"] == "DONE"):
-            logger.debug(f"Total contents: {len(contents)}\n\n")
+            self.logger.debug(f"Total contents: {len(contents)}\n\n")
 
             # check if the agent is acting without ever stopping
             if len(contents) > Person.MAX_ACTIONS_BEFORE_DONE:
@@ -250,7 +232,7 @@ class Person:
                     )
                     break
 
-            logger.debug(">>============= aux_act_once() =============")
+            self.logger.debug(">>============= aux_act_once() =============")
             aux_act_once()
 
         if return_actions:
@@ -261,7 +243,7 @@ class Person:
 
         # ensure we have the latest prompt (initial system message + selected messages from memory)
 
-        logger.debug(">>>>============= reset_prompt() =============")
+        self.logger.debug(">>>>============= reset_prompt() =============")
         self.reset_prompt()
 
         messages = [
@@ -269,33 +251,35 @@ class Person:
             for msg in self.current_messages
         ]
 
-        llm_type = default["LLM_TYPE"]
-        logger.debug(f"[{self.name}] Sending messages to {llm_type}\n")
-        logger.debug(f"[{self.name}] Messages: {messages} \n\n")
+        llm_type = self.default["LLM_TYPE"]
+        self.logger.debug(f"[{self.name}] Sending messages to {llm_type}\n")
+        self.logger.debug(f"[{self.name}] Messages: {messages} \n\n")
 
-        if default["LLM_TYPE"] == "Ollama":
-            logger.debug(">>>>============= ollama_client.send_message() =============")
+        if self.default["LLM_TYPE"] == "Ollama":
+            self.logger.debug(
+                ">>>>============= ollama_client.send_message() ============="
+            )
             next_message = self.ollama_client.send_message(
                 messages, response_format=CognitiveActionModel
             )
-        elif default["LLM_TYPE"] == "OpenAI":
+        elif self.default["LLM_TYPE"] == "OpenAI":
             logger.debug(
                 ">>>>============= openai_utils.client().send_message() ============="
             )
             next_message = openai_utils.client().send_message(
                 messages, response_format=CognitiveActionModel
             )
-        elif default["LLM_TYPE"] == "Anthropic":
+        elif self.default["LLM_TYPE"] == "Anthropic":
             next_message = self.anthropic_client.send_message(
                 messages, response_format=CognitiveActionModel
             )
         else:
             support_types = "Supported types are: Ollama, OpenAI, Anthropic."
             raise ValueError(
-                f"Unknown LLM type: {default['LLM_TYPE']}. {support_types}"
+                f"Unknown LLM type: {self.default['LLM_TYPE']}. {support_types}"
             )
 
-        logger.debug(f"[{self.name}] Received message: {next_message}\n\n")
+        self.logger.debug(f"[{self.name}] Received message: {next_message}\n\n")
 
         return next_message["role"], next_message["content"]
 
@@ -303,24 +287,25 @@ class Person:
         """Reset prompt"""
 
         # render the template with the current configuration
-        logger.debug(">>>>>============= generate_agent_system_prompt() =============")
+        self.logger.debug(
+            ">>>>>============= generate_agent_system_prompt() ============="
+        )
         self._init_system_message = self.generate_agent_system_prompt()
-
-        # TODO actually, figure out another way to update agent state without "changing history"
+        self.logger.debug("init_system_message: %s", self._init_system_message)
 
         # reset system message
-        logger.debug(">>>>>=== reset_prompt: set self.current_messages ====")
+        self.logger.debug(">>>>>=== reset_prompt: set self.current_messages ====")
         self.current_messages = [{"role": "user", "content": self._init_system_message}]
 
         # sets up the actual interaction messages to use for prompting
-        logger.debug(
+        self.logger.debug(
             ">>>>>=== reset_prompt: add self.current_messages with retrieve_recent_memories ==="
         )
         self.current_messages += self.retrieve_recent_memories()
 
         # add a final user message, which is neither stimuli or action,
         # to instigate the agent to act properly
-        logger.debug(
+        self.logger.debug(
             ">>>>>=== reset_prompt: add self.current_messages with hard coded ==="
         )
         self.current_messages.append(
@@ -426,7 +411,9 @@ class Person:
         {recent_memories}
         """
 
-        logger.debug(f"Retrieving relevant memories for contextual target: {target}")
+        self.logger.debug(
+            f"Retrieving relevant memories for contextual target: {target}"
+        )
 
         return self.retrieve_relevant_memories(target, top_k=top_k)
 
@@ -462,17 +449,14 @@ class Person:
         content,
         kind,
         simplified=True,
-        max_content_length=default["max_content_display_length"],
+        max_content_length=None,
     ):
         """
         Displays the current communication and stores it in a buffer for later use.
         """
         if kind == "stimuli":
             rendering = self._pretty_stimuli(
-                role=role,
-                content=content,
-                simplified=simplified,
-                max_content_length=max_content_length,
+                role=role, content=content, simplified=simplified
             )
             source = content["stimuli"][0]["source"]
             target = self.name
@@ -505,7 +489,6 @@ class Person:
         role,
         content,
         simplified=True,
-        max_content_length=default["max_content_display_length"],
     ) -> list:
         """
         Pretty prints stimuli.
@@ -523,7 +506,8 @@ class Person:
 
                 msg_simplified_type = stimus["type"]
                 msg_simplified_content = break_text_at_length(
-                    stimus["content"], max_length=max_content_length
+                    stimus["content"],
+                    max_length=self.default.get("max_content_display_length", 1024),
                 )
 
                 indent = " " * len(msg_simplified_actor) + "      > "
@@ -549,13 +533,7 @@ class Person:
 
         return "\n".join(lines)
 
-    def _pretty_action(
-        self,
-        role,
-        content,
-        simplified=True,
-        max_content_length=default["max_content_display_length"],
-    ) -> str:
+    def _pretty_action(self, role, content, simplified=True) -> str:
         """
         Pretty prints an action.
         """
@@ -563,7 +541,8 @@ class Person:
             msg_simplified_actor = self.name
             msg_simplified_type = content["action"]["type"]
             msg_simplified_content = break_text_at_length(
-                content["action"].get("content", ""), max_length=max_content_length
+                content["action"].get("content", ""),
+                max_length=self.default.get("max_content_display_length", 1024),
             )
 
             indent = " " * len(msg_simplified_actor) + "      > "

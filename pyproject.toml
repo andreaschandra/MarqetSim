@@ -46,13 +46,14 @@ dependencies = [
     "markdown",
     "jupyter",
     "pydantic",
-    "anthropic", 
+    "anthropic",
     "llama-index==0.12.3",
     "chromadb==1.0.15",
     "tox>=4.27.0",
     "isort>=6.0.1",
     "black>=25.1.0",
-    "pip"
+    "pip",
+    "ollama>=0.5.1",
 ]
 
 [project.scripts]
