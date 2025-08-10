@@ -15,12 +15,12 @@ from llama_index.core import SimpleDirectoryReader
 from llama_index.readers.web import SimpleWebPageReader
 
 from marqetsim import config
+from marqetsim.environment import Environment
 from marqetsim.knowledge import MarqKnowledge
 from marqetsim.schema import CognitiveActionModel, TinyMemory
 from marqetsim.utils import anthropic_utils, common, ollama_utils, openai_utils
 from marqetsim.utils.common import break_text_at_length, repeat_on_error
 from marqetsim.utils.logger import LogCreator
-from marqetsim.environment import Environment
 
 
 class Person:
