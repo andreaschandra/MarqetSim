@@ -1,13 +1,17 @@
 """Preset of agents for the MarqetSim simulation."""
 
-import logging
+import os
+import sys
 
 from marqetsim.agent import Person
+from marqetsim.utils.logger import LogCreator
+
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 
-def create_joe_the_analyst():
+def create_joe_the_analyst(logger=None):
     """Create a Joe the Analyst agent."""
-    person = Person("Joe")
+    person = Person("Joe", logger=logger)
     person.define("age", "35")
     person.define("nationality", "American")
     person.define("country_of_residence", "USA")
@@ -72,16 +76,10 @@ def create_joe_the_analyst():
 
 
 if __name__ == "__main__":
-    logger = logging.getLogger("marqetsim")
-    logger.setLevel(logging.DEBUG)
-    console_handler = logging.StreamHandler()
-    console_handler.setLevel(logging.DEBUG)
-    formatter = logging.Formatter("%(levelname)s - %(message)s")
-    console_handler.setFormatter(formatter)
-    logger.addHandler(console_handler)
+    logger = LogCreator("examples", level="DEBUG")
 
     # Example usage
-    joe = create_joe_the_analyst()
+    joe = create_joe_the_analyst(logger=logger)
     # logger.info(f"Created agent: {joe._configuration}") --> should not be accessed
 
     joe.set_context(
