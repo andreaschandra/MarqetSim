@@ -93,3 +93,7 @@ Desktop.ini
 # Dependency managers
 poetry.lock
 Pipfile.lock
+
+# custom
+marq-knowledge/
+uv.lock
