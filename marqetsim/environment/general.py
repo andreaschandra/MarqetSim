@@ -1,6 +1,7 @@
 """Environment settings for MarqetSim."""
 
 from datetime import datetime
+
 from pydantic import BaseModel
 
 

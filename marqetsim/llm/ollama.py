@@ -48,7 +48,10 @@ class OllamaAPIClient:
         )
         print(f"Raw response: {response}")
 
-        return {"role": response['message']['role'], "content": response['message']['content']}
+        return {
+            "role": response["message"]["role"],
+            "content": response["message"]["content"],
+        }
 
 
 class Country(BaseModel):
@@ -90,7 +93,7 @@ def main():
     ollama = OllamaAPIClient()
 
     response = ollama.send_message(current_message, response_format)
-    response_dict = json.loads(response['content'])
+    response_dict = json.loads(response["content"])
     print("Question: ", args.question)
     print("Country: ", response_dict["name"])
     print("Capital: ", response_dict["capital"])
