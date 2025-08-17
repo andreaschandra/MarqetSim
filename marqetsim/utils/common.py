@@ -1,4 +1,4 @@
-"""Agent utilities"""
+"""Agent utilities."""
 
 import configparser
 import copy
@@ -19,11 +19,21 @@ logger = logging.getLogger("marqetsim")
 
 
 def read_yaml_file(file_path):
+    """Reads a YAML or JSON file and returns its content as a dictionary.
+    The file path can be absolute or relative. If the file does not exist, a FileNotFoundError is raised.
+    If the file format is not supported, a ValueError is raised.
+
+    Args:
+        file_path (str): The path to the YAML or JSON file.
+
+    Returns:
+        dict: The content of the file as a dictionary.
+    """
     path = Path(file_path)
     if not path.exists():
         raise FileNotFoundError(f"File '{file_path}' not found.")
 
-    with open(file_path, "r") as f:
+    with open(file_path, "r", encoding="utf-8") as f:
         if file_path.endswith(".json"):
             return json.load(f)
         elif file_path.endswith((".yaml", ".yml")):
@@ -293,6 +303,8 @@ def sanitize_dict(value: dict) -> dict:
 
 
 class Config:
+    """Configuration class to load environment variables from .env.local or .env file."""
+
     def __init__(self):
         if os.path.exists(".env.local"):
             load_dotenv(".env.local")
@@ -317,7 +329,7 @@ class RichTextStyle:
     def get_style_for(cls, kind: str, event_type: str):
         """style for kind and event type."""
 
-        if kind == "stimulus" or kind == "stimuli":
+        if kind in ["stimulus", "stimuli"]:
             if event_type == "CONVERSATION":
                 return cls.STIMULUS_CONVERSATION_STYLE
             elif event_type == "THOUGHT":
@@ -344,4 +356,11 @@ def read_csv(path: str) -> list:
 
     with open(path, mode="r", encoding="utf-8") as csvfile:
         reader = csv.DictReader(csvfile)
-        return [row for row in reader]
+        return reader
+
+
+def pretty_datetime(dt) -> str:
+    """
+    Returns a pretty string representation of the specified datetime object.
+    """
+    return dt.strftime("%Y-%m-%d %H:%M")

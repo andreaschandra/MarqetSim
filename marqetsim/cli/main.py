@@ -4,16 +4,20 @@ from pathlib import Path
 
 import click
 
-from marqetsim.agent_generator import generate_coherent_person
-from marqetsim.examples import create_joe_the_analyst
-from marqetsim.simulator import create_person
-from marqetsim.utils import common
+from marqetsim.agent import (
+    create_joe_the_analyst,
+    create_person,
+    generate_coherent_person,
+)
+from marqetsim.utils import LogCreator, common
 
 
 @click.command()
 @click.argument("file_path", type=click.Path(exists=True))
 def launch(file_path):
     """Read a YAML or JSON file and print it as a dictionary."""
+
+    logger = LogCreator()
     try:
         data = common.read_yaml_file(file_path)
         situation = data.pop("situation")
@@ -26,17 +30,20 @@ def launch(file_path):
             people = [create_joe_the_analyst()]
         else:
             if isinstance(data["agent"], dict):
-                one_person = create_person(profile=data.pop("agent"))
+                one_person = create_person(profile=data.pop("agent"), logger=logger)
                 people = [one_person]
             elif isinstance(data["agent"], str):
                 agent_file_path = Path(data["agent"])
                 assert agent_file_path.is_file(), "Agent file does not exist."
                 data_agent = common.read_csv(agent_file_path)
-                people = [create_person(profile=profile) for profile in data_agent]
+                people = [
+                    create_person(profile=profile, logger=logger)
+                    for profile in data_agent
+                ]
             elif isinstance(data["agent"], int):
                 for i in range(data["agent"]):
                     record = generate_coherent_person()
-                    person = create_person(record)
+                    person = create_person(record, logger=logger)
                     people.append(person)
             else:
                 raise ValueError(

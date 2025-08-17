@@ -2,11 +2,10 @@
 
 import copy
 import json
-import logging
 import os
-import sys
 import textwrap
 import uuid
+from pathlib import Path
 from typing import Any
 
 import chevron
@@ -16,9 +15,12 @@ from llama_index.readers.web import SimpleWebPageReader
 
 from marqetsim import config
 from marqetsim.environment import Environment
-from marqetsim.knowledge import MarqKnowledge
-from marqetsim.schema import CognitiveActionModel, TinyMemory
-from marqetsim.utils import anthropic_utils, common, ollama_utils, openai_utils
+from marqetsim.llm.anthropic import AnthropicAPIClient
+from marqetsim.llm.ollama import OllamaAPIClient
+from marqetsim.llm.openai import OpenAIClient
+from marqetsim.memory.rag import MarqKnowledge
+from marqetsim.schema.schema import CognitiveActionModel, TinyMemory
+from marqetsim.utils import common
 from marqetsim.utils.common import break_text_at_length, repeat_on_error
 from marqetsim.utils.logger import LogCreator
 
@@ -49,8 +51,8 @@ class Person:
         # consumed by the environment yet.
         self._actions_buffer = []
 
-        self._prompt_template_path = os.path.join(
-            os.path.dirname(__file__), "prompts/tinyperson.mustache"
+        self._prompt_template_path = (
+            Path(__file__).parent.parent / "prompts" / "tinyperson.mustache"
         )
 
         # the current environment in which the agent is acting
@@ -58,12 +60,12 @@ class Person:
         self._configuration["current_datetime"] = self.iso_datetime()
 
         # Memory
-        self.episodic_memory = EpisodicMemory()
+        self.episodic_memory = EpisodicMemory(name=name)
         self.semantic_memory = SemanticMemory(name="marq-knowledge")
 
         # LLM Provider
-        self.ollama_client = ollama_utils.OllamaAPIClient()
-        self.anthropic_client = anthropic_utils.AnthropicAPIClient()
+        self.ollama_client = OllamaAPIClient()
+        self.anthropic_client = AnthropicAPIClient()
 
     def define(self, key, value):
         """Define Person attributes."""
@@ -110,7 +112,6 @@ class Person:
                 content=content,
                 kind="stimuli",
                 simplified=True,
-                max_content_length=1024,
             )
 
         return self  # allows easier chaining of methods
@@ -127,8 +128,6 @@ class Person:
             and self.environment.current_datetime is not None
         ):
             return self.environment.current_datetime.isoformat()
-        else:
-            return None
 
     def store_in_memory(self, data):
         """Store data in memory."""
@@ -195,11 +194,7 @@ class Person:
                 )
                 if Person.communication_display:
                     self._display_communication(
-                        role=role,
-                        content=subcontent,
-                        kind="action",
-                        simplified=True,
-                        max_content_length=1024,
+                        role=role, content=subcontent, kind="action", simplified=True
                     )
 
                 #
@@ -214,7 +209,7 @@ class Person:
 
             # check if the agent is acting without ever stopping
             if len(contents) > Person.MAX_ACTIONS_BEFORE_DONE:
-                logger.warning(
+                self.logger.warning(
                     f"[{self.name}] Agent {self.name} is not stopping. This may be a bug."
                 )
                 break
@@ -227,7 +222,7 @@ class Person:
                     == contents[-2]["action"]
                     == contents[-3]["action"]
                 ):
-                    logger.warning(
+                    self.logger.warning(
                         f"[{self.name}] Agent {self.name} is acting in a loop. This may be a bug."
                     )
                     break
@@ -263,10 +258,12 @@ class Person:
                 messages, response_format=CognitiveActionModel
             )
         elif self.default["LLM_TYPE"] == "OpenAI":
-            logger.debug(
-                ">>>>============= openai_utils.client().send_message() ============="
+            self.logger.debug(
+                ">>>>============= openai_client.send_message() ============="
             )
-            next_message = openai_utils.client().send_message(
+
+            openai_client = OpenAIClient()
+            next_message = openai_client.send_message(
                 messages, response_format=CognitiveActionModel
             )
         elif self.default["LLM_TYPE"] == "Anthropic":
@@ -443,14 +440,7 @@ class Person:
         return relevant
 
     # ============== Display ==============
-    def _display_communication(
-        self,
-        role,
-        content,
-        kind,
-        simplified=True,
-        max_content_length=None,
-    ):
+    def _display_communication(self, role, content, kind, simplified=True):
         """
         Displays the current communication and stores it in a buffer for later use.
         """
@@ -463,10 +453,7 @@ class Person:
 
         elif kind == "action":
             rendering = self._pretty_action(
-                role=role,
-                content=content,
-                simplified=simplified,
-                max_content_length=max_content_length,
+                role=role, content=content, simplified=simplified
             )
             source = self.name
             target = content["action"]["target"]
@@ -590,7 +577,10 @@ class EpisodicMemory(TinyMemory):
     }
 
     def __init__(
-        self, fixed_prefix_length: int = 100, lookback_length: int = 100
+        self,
+        name: str = "agent",
+        fixed_prefix_length: int = 100,
+        lookback_length: int = 100,
     ) -> None:
         """
         Initializes the memory.
@@ -599,6 +589,7 @@ class EpisodicMemory(TinyMemory):
             fixed_prefix_length (int): The fixed prefix length. Defaults to 20.
             lookback_length (int): The lookback length. Defaults to 20.
         """
+        super().__init__(name=name)
         self.fixed_prefix_length = fixed_prefix_length
         self.lookback_length = lookback_length
 
@@ -716,7 +707,6 @@ class SemanticMemory(TinyMemory):
 
     suppress_attributes_from_serialization = ["index"]
 
-    ## TODO: explain what the input of based_knowledge would be.
     def __init__(
         self,
         documents_paths: list = None,
@@ -725,6 +715,7 @@ class SemanticMemory(TinyMemory):
         name=None,
         persistent_path=None,
     ) -> None:
+        super().__init__(name=name)
         self.based_knowledge = based_knowledge or MarqKnowledge(
             collection_name=name, persist_directory=persistent_path
         )
@@ -789,9 +780,7 @@ class SemanticMemory(TinyMemory):
             doc = self.filename_to_document[document_name]
             if doc is not None:
                 content = "SOURCE: " + document_name
-                content += (
-                    "\n" + "CONTENT: " + doc.text[:10000]
-                )  # TODO a more intelligent way to limit the content
+                content += "\n" + "CONTENT: " + doc.text[:10000]
                 return content
             else:
                 return None
@@ -886,7 +875,7 @@ class SemanticMemory(TinyMemory):
         doc_id = str(uuid.uuid4())
 
         # Add to vector DB
-        self.marq_knowledge.add_document(
+        self.based_knowledge.add_document(
             document.text, doc_id, metadata={"file_name": name}
         )
 
@@ -898,7 +887,6 @@ class SemanticMemory(TinyMemory):
     ###########################################################
 
     def _post_deserialization_init(self):
-        super()._post_deserialization_init()
 
         # Reset or recreate MarqKnowledge instance if needed
         self.based_knowledge = MarqKnowledge()

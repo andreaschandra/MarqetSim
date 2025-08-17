@@ -102,7 +102,7 @@ recursive=no
 # source root is an absolute path or a path relative to the current working
 # directory used to determine a package namespace for modules located under the
 # source root.
-source-roots=
+source-roots=.
 
 # When enabled, pylint would attempt to guess common misconfiguration and emit
 # user-friendly hints instead of false-positive error messages.
@@ -434,15 +434,28 @@ disable=raw-checker-failed,
         useless-suppression,
         deprecated-pragma,
         use-symbolic-message-instead,
-        use-implicit-booleaness-not-comparison-to-string,
-        use-implicit-booleaness-not-comparison-to-zero,
         redefined-outer-name,
-        no-member,
         logging-not-lazy,
         logging-fstring-interpolation,
-        broad-exception-caught
+        broad-exception-caught,
+        inconsistent-return-statements,
+        global-statement,
+        dangerous-default-value,
+        raising-non-exception,
+        no-else-raise,
+        no-else-return,
+        catching-non-exception,
+        line-too-long,
+        too-few-public-methods,
+        too-many-arguments,
+        too-many-statements,
+        too-many-function-args,
+        too-many-instance-attributes,
+        too-many-positional-arguments,
+        too-many-return-statements,
+        abstract-method
         
-
+        
 # Enable the message, report, category or checker with the given id(s). You can
 # either give multiple identifier separated by comma (,) or put this option
 # multiple time (only on the command line, not in the configuration file where
