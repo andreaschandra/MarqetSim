@@ -1,10 +1,10 @@
 """Environment settings for MarqetSim."""
 
 from datetime import datetime
+from pydantic import BaseModel
 
 
-class Environment:
+class Environment(BaseModel):
     """General environment settings for MarqetSim."""
 
-    def __init__(self):
-        self.current_datetime = datetime.now()
+    current_datetime: datetime = datetime.now()

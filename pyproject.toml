@@ -54,6 +54,7 @@ dependencies = [
     "black>=25.1.0",
     "pip",
     "ollama>=0.5.1",
+    "pylint>=3.3.8",
 ]
 
 [project.scripts]

@@ -1,3 +1,5 @@
+"""OpenAI API client for interacting with OpenAI and Azure OpenAI services."""
+
 import logging
 import os
 import pickle
@@ -11,7 +13,6 @@ from marqetsim.utils import common
 
 logger = logging.getLogger("marqetsim")
 
-# We'll use various configuration elements below
 config = common.read_config_file()
 
 ###########################################################################
@@ -40,85 +41,6 @@ default["cache_file_name"] = config["OpenAI"].get(
     "CACHE_FILE_NAME", "openai_api_cache.pickle"
 )
 
-###########################################################################
-# Model calling helpers
-###########################################################################
-
-
-class LLMRequest:
-    """
-    A class that represents an LLM model call. It contains the input messages, the model configuration, and the model output.
-    """
-
-    def __init__(
-        self,
-        system_template_name: str = None,
-        system_prompt: str = None,
-        user_template_name: str = None,
-        user_prompt: str = None,
-        **model_params,
-    ):
-        """
-        Initializes an LLMCall instance with the specified system and user templates, or the system and user prompts.
-        If a template is specified, the corresponding prompt must be None, and vice versa.
-        """
-        if (
-            (system_template_name is not None and system_prompt is not None)
-            or (user_template_name is not None and user_prompt is not None)
-            or (system_template_name is None and system_prompt is None)
-            or (user_template_name is None and user_prompt is None)
-        ):
-            raise ValueError(
-                "Either the template or the prompt must be specified, but not both."
-            )
-
-        self.system_template_name = system_template_name
-        self.system_prompt = system_prompt
-        self.user_template_name = user_template_name
-        self.user_prompt = user_prompt
-
-        self.model_params = model_params
-        self.model_output = None
-
-        self.messages = []
-
-    def call(self, **rendering_configs):
-        """
-        Calls the LLM model with the specified rendering configurations.
-
-        Args:
-            rendering_configs: The rendering configurations (template variables) to use when composing the initial messages.
-
-        Returns:
-            The content of the model response.
-        """
-        if (
-            self.system_template_name is not None
-            and self.user_template_name is not None
-        ):
-            self.messages = common.compose_initial_LLM_messages_with_templates(
-                self.system_template_name, self.user_template_name, rendering_configs
-            )
-        else:
-            self.messages = [
-                {"role": "system", "content": self.system_prompt},
-                {"role": "user", "content": self.user_prompt},
-            ]
-
-        # call the LLM model
-        self.model_output = client().send_message(self.messages, **self.model_params)
-
-        if "content" in self.model_output:
-            return self.model_output["content"]
-        else:
-            logger.error(
-                f"Model output does not contain 'content' key: {self.model_output}"
-            )
-            return None
-
-    def __repr__(self):
-        return f"LLMRequest(messages={self.messages}, model_params={self.model_params}, model_output={self.model_output})"
-
 
 ###########################################################################
 # Client class
@@ -139,6 +61,7 @@ class OpenAIClient:
 
         # should we cache api calls and reuse them?
         self.set_api_cache(cache_api_calls, cache_file_name)
+        self.client = None
 
     def set_api_cache(
         self, cache_api_calls, cache_file_name=default["cache_file_name"]
@@ -164,17 +87,8 @@ class OpenAIClient:
     def send_message(
         self,
         current_messages,
-        model=default["model"],
-        temperature=default["temperature"],
-        max_tokens=default["max_tokens"],
-        top_p=default["top_p"],
-        frequency_penalty=default["frequency_penalty"],
-        presence_penalty=default["presence_penalty"],
-        stop=[],
-        timeout=default["timeout"],
-        max_attempts=default["max_attempts"],
-        waiting_time=default["waiting_time"],
-        exponential_backoff_factor=default["exponential_backoff_factor"],
+        default=default,
+        stop=None,
         n=1,
         response_format=None,
     ):
@@ -183,23 +97,18 @@ class OpenAIClient:
 
         Args:
         current_messages (list): A list of dictionaries representing the conversation history.
-        model (str): The ID of the model to use for generating the response.
-        temperature (float): Controls the "creativity" of the response. Higher values result in more diverse responses.
-        max_tokens (int): The maximum number of tokens (words or punctuation marks) to generate in the response.
-        top_p (float): Controls the "quality" of the response. Higher values result in more coherent responses.
-        frequency_penalty (float): Controls the "repetition" of the response. Higher values result in less repetition.
-        presence_penalty (float): Controls the "diversity" of the response. Higher values result in more diverse responses.
+        default (dict): A dictionary containing the default parameters for the API call.
         stop (str): A string that, if encountered in the generated response, will cause the generation to stop.
-        max_attempts (int): The maximum number of attempts to make before giving up on generating a response.
-        timeout (int): The maximum number of seconds to wait for a response from the API.
-        waiting_time (int): The number of seconds to wait between requests.
-        exponential_backoff_factor (int): The factor by which to increase the waiting time between requests.
         n (int): The number of completions to generate.
         response_format (str): The format of the response. If None, the response is returned as a dictionary.
 
         Returns:
         A dictionary representing the generated response.
         """
+
+        model = default.get("model")
+        waiting_time = default.get("waiting_time")
+        exponential_backoff_factor = default.get("exponential_backoff_factor")
 
         def aux_exponential_backoff():
             nonlocal waiting_time
@@ -221,15 +130,15 @@ class OpenAIClient:
 
         # We need to adapt the parameters to the API type, so we create a dictionary with them first
         chat_api_params = {
-            "model": model,
+            "model": default.get("model"),
             "messages": current_messages,
-            "temperature": temperature,
-            "max_tokens": max_tokens,
-            "top_p": top_p,
-            "frequency_penalty": frequency_penalty,
-            "presence_penalty": presence_penalty,
-            "stop": stop,
-            "timeout": timeout,
+            "temperature": default.get("temperature"),
+            "max_tokens": default.get("max_tokens"),
+            "top_p": default.get("top_p"),
+            "frequency_penalty": default.get("frequency_penalty"),
+            "presence_penalty": default.get("presence_penalty"),
+            "stop": stop or [],
+            "timeout": default.get("timeout"),
             "stream": False,
             "n": n,
         }
@@ -238,7 +147,7 @@ class OpenAIClient:
             chat_api_params["response_format"] = response_format
 
         i = 0
-        while i < max_attempts:
+        while i < default.get("max_attempts"):
             try:
                 i += 1
 
@@ -310,10 +219,12 @@ class OpenAIClient:
             except Exception as e:
                 logger.error(f"[{i}] Error: {e}")
 
-        logger.error(f"Failed to get response after {max_attempts} attempts.")
+        logger.error(
+            f"Failed to get response after {default.get('max_attempts')} attempts."
+        )
         return None
 
-    def _raw_model_call(self, model, chat_api_params):
+    def _raw_model_call(self, chat_api_params):
         """
         Calls the OpenAI API with the given parameters. Subclasses should
         override this method to implement their own API calls.
@@ -331,11 +242,8 @@ class OpenAIClient:
 
             return self.client.beta.chat.completions.parse(**chat_api_params)
 
-        else:
-            logger.debug(
-                ">>>>>>========== self.client.chat.completions.create =========="
-            )
-            return self.client.chat.completions.create(**chat_api_params)
+        logger.debug(">>>>>>========== self.client.chat.completions.create ==========")
+        return self.client.chat.completions.create(**chat_api_params)
 
     def _raw_model_response_extractor(self, response):
         """
@@ -411,18 +319,18 @@ class OpenAIClient:
         are not JSON serializable.
         """
         # use pickle to save the cache
-        pickle.dump(self.api_cache, open(self.cache_file_name, "wb"))
+        with open(self.cache_file_name, "wb") as f:
+            pickle.dump(self.api_cache, f)
 
     def _load_cache(self):
         """
         Loads the API cache from disk.
         """
         # unpickle
-        return (
-            pickle.load(open(self.cache_file_name, "rb"))
-            if os.path.exists(self.cache_file_name)
-            else {}
-        )
+        if os.path.exists(self.cache_file_name):
+            with open(self.cache_file_name, "rb") as f:
+                return pickle.load(f)
+        return {}
 
     def get_embedding(self, text, model=default["embedding_model"]):
         """
@@ -454,6 +362,9 @@ class OpenAIClient:
 
 
 class AzureClient(OpenAIClient):
+    """A utility class for interacting with the Azure OpenAI Service API.
+    This class extends the OpenAIClient to support Azure-specific configurations.
+    """
 
     def __init__(
         self,
@@ -484,15 +395,11 @@ class InvalidRequestError(Exception):
     Exception raised when the request to the OpenAI API is invalid.
     """
 
-    pass
-
 
 class NonTerminalError(Exception):
     """
     Exception raised when an unspecified error occurs but we know we can retry.
     """
-
-    pass
 
 
 ###########################################################################
@@ -509,7 +416,7 @@ class NonTerminalError(Exception):
 # otherwise non-conventional API endpoints.
 ###########################################################################
 _api_type_to_client = {}
-_api_type_override = None
+_API_TYPE_OVERRIDE = None
 
 
 def register_client(api_type, client):
@@ -544,15 +451,12 @@ def client():
     """
     api_type = (
         config["OpenAI"]["API_TYPE"]
-        if _api_type_override is None
-        else _api_type_override
+        if _API_TYPE_OVERRIDE is None
+        else _API_TYPE_OVERRIDE
     )
 
     logger.debug(f"Using  API type {api_type}.")
     return _get_client_for_api_type(api_type)
-
-
-# TODO simplify the custom configuration methods below
 
 
 def force_api_type(api_type):
@@ -562,8 +466,8 @@ def force_api_type(api_type):
     Args:
     api_type (str): The API type to use.
     """
-    global _api_type_override
-    _api_type_override = api_type
+    global _API_TYPE_OVERRIDE
+    _API_TYPE_OVERRIDE = api_type
 
 
 def force_api_cache(cache_api_calls, cache_file_name=default["cache_file_name"]):

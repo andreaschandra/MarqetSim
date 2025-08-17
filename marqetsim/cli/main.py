@@ -4,11 +4,12 @@ from pathlib import Path
 
 import click
 
-from marqetsim.agent import generate_coherent_person
-from marqetsim.agent import create_joe_the_analyst
-from marqetsim.agent import create_person
-from marqetsim.utils import common
-from marqetsim.utils import LogCreator
+from marqetsim.agent import (
+    create_joe_the_analyst,
+    create_person,
+    generate_coherent_person,
+)
+from marqetsim.utils import LogCreator, common
 
 
 @click.command()

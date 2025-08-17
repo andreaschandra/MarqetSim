@@ -1,3 +1,5 @@
+"""initialization for the agent module."""
+
 from .example import create_joe_the_analyst
 from .factory import generate_coherent_person
 from .person import Person

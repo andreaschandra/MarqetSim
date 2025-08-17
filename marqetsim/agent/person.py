@@ -5,8 +5,8 @@ import json
 import os
 import textwrap
 import uuid
-from typing import Any
 from pathlib import Path
+from typing import Any
 
 import chevron
 import rich
@@ -15,11 +15,12 @@ from llama_index.readers.web import SimpleWebPageReader
 
 from marqetsim import config
 from marqetsim.environment import Environment
+from marqetsim.llm.anthropic import AnthropicAPIClient
+from marqetsim.llm.ollama import OllamaAPIClient
+from marqetsim.llm.openai import OpenAIClient
 from marqetsim.memory.rag import MarqKnowledge
 from marqetsim.schema.schema import CognitiveActionModel, TinyMemory
 from marqetsim.utils import common
-from marqetsim.llm.anthropic import AnthropicAPIClient
-from marqetsim.llm.ollama import OllamaAPIClient
 from marqetsim.utils.common import break_text_at_length, repeat_on_error
 from marqetsim.utils.logger import LogCreator
 
@@ -59,7 +60,7 @@ class Person:
         self._configuration["current_datetime"] = self.iso_datetime()
 
         # Memory
-        self.episodic_memory = EpisodicMemory()
+        self.episodic_memory = EpisodicMemory(name=name)
         self.semantic_memory = SemanticMemory(name="marq-knowledge")
 
         # LLM Provider
@@ -111,7 +112,6 @@ class Person:
                 content=content,
                 kind="stimuli",
                 simplified=True,
-                max_content_length=1024,
             )
 
         return self  # allows easier chaining of methods
@@ -128,8 +128,6 @@ class Person:
             and self.environment.current_datetime is not None
         ):
             return self.environment.current_datetime.isoformat()
-        else:
-            return None
 
     def store_in_memory(self, data):
         """Store data in memory."""
@@ -196,11 +194,7 @@ class Person:
                 )
                 if Person.communication_display:
                     self._display_communication(
-                        role=role,
-                        content=subcontent,
-                        kind="action",
-                        simplified=True,
-                        max_content_length=1024,
+                        role=role, content=subcontent, kind="action", simplified=True
                     )
 
                 #
@@ -267,7 +261,6 @@ class Person:
             self.logger.debug(
                 ">>>>============= openai_client.send_message() ============="
             )
-            from marqetsim.llm.openai import OpenAIClient
 
             openai_client = OpenAIClient()
             next_message = openai_client.send_message(
@@ -447,14 +440,7 @@ class Person:
         return relevant
 
     # ============== Display ==============
-    def _display_communication(
-        self,
-        role,
-        content,
-        kind,
-        simplified=True,
-        max_content_length=None,
-    ):
+    def _display_communication(self, role, content, kind, simplified=True):
         """
         Displays the current communication and stores it in a buffer for later use.
         """
@@ -591,7 +577,10 @@ class EpisodicMemory(TinyMemory):
     }
 
     def __init__(
-        self, fixed_prefix_length: int = 100, lookback_length: int = 100
+        self,
+        name: str = "agent",
+        fixed_prefix_length: int = 100,
+        lookback_length: int = 100,
     ) -> None:
         """
         Initializes the memory.
@@ -600,6 +589,7 @@ class EpisodicMemory(TinyMemory):
             fixed_prefix_length (int): The fixed prefix length. Defaults to 20.
             lookback_length (int): The lookback length. Defaults to 20.
         """
+        super().__init__(name=name)
         self.fixed_prefix_length = fixed_prefix_length
         self.lookback_length = lookback_length
 
@@ -717,7 +707,6 @@ class SemanticMemory(TinyMemory):
 
     suppress_attributes_from_serialization = ["index"]
 
-    ## TODO: explain what the input of based_knowledge would be.
     def __init__(
         self,
         documents_paths: list = None,
@@ -726,6 +715,7 @@ class SemanticMemory(TinyMemory):
         name=None,
         persistent_path=None,
     ) -> None:
+        super().__init__(name=name)
         self.based_knowledge = based_knowledge or MarqKnowledge(
             collection_name=name, persist_directory=persistent_path
         )
@@ -790,9 +780,7 @@ class SemanticMemory(TinyMemory):
             doc = self.filename_to_document[document_name]
             if doc is not None:
                 content = "SOURCE: " + document_name
-                content += (
-                    "\n" + "CONTENT: " + doc.text[:10000]
-                )  # TODO a more intelligent way to limit the content
+                content += "\n" + "CONTENT: " + doc.text[:10000]
                 return content
             else:
                 return None
@@ -887,7 +875,7 @@ class SemanticMemory(TinyMemory):
         doc_id = str(uuid.uuid4())
 
         # Add to vector DB
-        self.marq_knowledge.add_document(
+        self.based_knowledge.add_document(
             document.text, doc_id, metadata={"file_name": name}
         )
 
@@ -899,7 +887,6 @@ class SemanticMemory(TinyMemory):
     ###########################################################
 
     def _post_deserialization_init(self):
-        super()._post_deserialization_init()
 
         # Reset or recreate MarqKnowledge instance if needed
         self.based_knowledge = MarqKnowledge()
