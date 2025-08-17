@@ -345,3 +345,10 @@ def read_csv(path: str) -> list:
     with open(path, mode="r", encoding="utf-8") as csvfile:
         reader = csv.DictReader(csvfile)
         return [row for row in reader]
+
+
+def pretty_datetime(dt) -> str:
+    """
+    Returns a pretty string representation of the specified datetime object.
+    """
+    return dt.strftime("%Y-%m-%d %H:%M")

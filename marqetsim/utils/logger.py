@@ -38,7 +38,7 @@ class RecordFormater(Formatter):
 class LogCreator(Logger):
     """Log Creator that sets logging with color formatting and file output."""
 
-    def __init__(self, name: str, level="DEBUG", log_file: Path = None):
+    def __init__(self, name: str = "marqetsim", level="INFO", log_file: Path = None):
         super().__init__(name, level)
 
         log_format = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"

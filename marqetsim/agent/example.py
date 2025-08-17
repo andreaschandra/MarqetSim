@@ -3,7 +3,7 @@
 import os
 import sys
 
-from marqetsim.agent import Person
+from .person import Person
 from marqetsim.utils.logger import LogCreator
 
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
