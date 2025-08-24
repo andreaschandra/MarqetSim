@@ -58,7 +58,7 @@ dependencies = [
 ]
 
 [project.scripts]
-marq = "marqetsim.cli:launch"
+marq = "marqetsim.cli:cli"
 
 [project.urls]
 "Homepage" = "https://github.com/andreaschandra/marqetsim"
