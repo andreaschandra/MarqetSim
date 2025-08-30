@@ -3,6 +3,9 @@
 from pathlib import Path
 
 import click
+import pandas as pd
+from rich.console import Console
+from rich.table import Table
 
 from marqetsim.agent import (
     create_joe_the_analyst,
@@ -79,20 +82,11 @@ def launch(file_path):
 @cli.command()
 @click.argument("file_path", type=click.Path(exists=True))
 def summarize(file_path):
-    # TODO: The response (I have saved it) not litterally catch the option choosen by the agent. not easy to extract to csv
-    # TODO: use csv directly as the input as of now. Next time just use the yaml project config. Therefore we need put output path in the project config
     """summarize a csv file of agents responses"""
 
     # read the csv file calculate the count of rows group by response column and show simple visualization through cli
-    import pandas as pd
-    from rich.bar import Bar
-    from rich.console import Console
-    from rich.table import Table
-
     df = pd.read_csv(file_path)
     counts = df["response"].value_counts()
-
-    # TODO: Need to decide  visualization other than bar chart
 
     console = Console()
     table = Table(title="Response Summary")
@@ -104,7 +98,7 @@ def summarize(file_path):
     max_count = counts.max()
     for label, count in counts.items():
         bar_len = int((count / max_count) * 40)  # scale to 40 chars
-        bar = "█" * bar_len
-        table.add_row(str(label), str(count), bar)  # convert everything to str
+        bar_text = "█" * bar_len
+        table.add_row(str(label), str(count), bar_text)  # convert everything to str
 
     console.print(table)
