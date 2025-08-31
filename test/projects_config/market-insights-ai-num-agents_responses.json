@@ -1,0 +1,102 @@
+{
+    "Ika Wardani": [
+        {
+            "action": {
+                "type": "THINK",
+                "content": "As a 65-year-old Singaporean nurse, I'll carefully evaluate these travel packages considering my age, background, and personal preferences. Each package offers a unique experience, but one stands out for someone like me.",
+                "target": ""
+            },
+            "cognitive_state": {
+                "goals": "Evaluate travel packages based on personal suitability",
+                "attention": "Comparing tour packages for mature travelers",
+                "emotions": "Intrigued by travel possibilities"
+            }
+        },
+        {
+            "action": {
+                "type": "THINK",
+                "content": "Option 1 (Solo Explorer) seems too energetic and fast-paced for my age. Option 2 is family-oriented and not suitable for a solo traveler like myself. Option 3 (Golden Years Discovery) is perfectly tailored for me - it offers a relaxed pace, cultural experiences, and considers the needs of mature travelers.",
+                "target": ""
+            },
+            "cognitive_state": {
+                "goals": "Select most appropriate travel package",
+                "attention": "Analyzing details of Golden Years Japan Discovery tour",
+                "emotions": "Feeling excited about potential travel"
+            }
+        },
+        {
+            "action": {
+                "type": "TALK",
+                "content": "I would definitely choose the Golden Years Japan Discovery package. As a 65-year-old, I appreciate that it's designed specifically for mature travelers like myself. The slower pace, luxury accommodations, cultural workshops, and medical assistance support are exactly what I'm looking for in a travel experience. The highlights like onsen resorts, tea ceremonies, and scenic train rides through the Japanese Alps sound perfect for someone wanting a comfortable yet enriching journey.",
+                "target": ""
+            },
+            "cognitive_state": {
+                "goals": "Explain travel package selection",
+                "attention": "Highlighting benefits of the Golden Years tour",
+                "emotions": "Enthusiastic and confident"
+            }
+        },
+        {
+            "action": {
+                "type": "DONE",
+                "content": "",
+                "target": ""
+            },
+            "cognitive_state": {
+                "goals": "Complete travel package evaluation",
+                "attention": "Finished analyzing and explaining choice",
+                "emotions": "Satisfied"
+            }
+        }
+    ],
+    "Vino Iskandar": [
+        {
+            "action": {
+                "type": "THINK",
+                "content": "As a 28-year-old Indonesian teacher who is self-employed and has traveled before, I'll carefully analyze these Japan tour options based on my personal preferences and background.",
+                "target": ""
+            },
+            "cognitive_state": {
+                "goals": "Evaluate Japan tour packages",
+                "attention": "Comparing tour options for solo traveler",
+                "emotions": "Excited about potential travel opportunities"
+            }
+        },
+        {
+            "action": {
+                "type": "THINK",
+                "content": "As a budget-conscious solo traveler, the TOKYO ADVENTURE EXPRESS speaks directly to me. It offers an independent exploration style that matches my personality as a teacher who values authentic cultural experiences. The price point of $1,899 is reasonable, and the itinerary focuses on cultural immersion and personal discovery.",
+                "target": ""
+            },
+            "cognitive_state": {
+                "goals": "Select most appealing Japan tour package",
+                "attention": "Analyzing tour package details",
+                "emotions": "Intrigue and excitement about travel possibilities"
+            }
+        },
+        {
+            "action": {
+                "type": "TALK",
+                "content": "I would choose the TOKYO ADVENTURE EXPRESS - Solo Explorer Edition. As a teacher who values independent travel and cultural experiences, this package perfectly aligns with my preferences. The $1,899 price point is affordable, and the itinerary offers a great balance of urban exploration and cultural immersion. The highlights like Harajuku street fashion district, traditional ryokan stay, and bullet train experience are particularly appealing to me as someone who loves to understand local culture deeply.",
+                "target": ""
+            },
+            "cognitive_state": {
+                "goals": "Explain tour package selection",
+                "attention": "Highlighting key reasons for choice",
+                "emotions": "Enthusiasm about potential travel"
+            }
+        },
+        {
+            "action": {
+                "type": "DONE",
+                "content": "",
+                "target": ""
+            },
+            "cognitive_state": {
+                "goals": "Complete tour package evaluation",
+                "attention": "Finished analyzing and explaining selection",
+                "emotions": "Satisfied with decision"
+            }
+        }
+    ]
+}

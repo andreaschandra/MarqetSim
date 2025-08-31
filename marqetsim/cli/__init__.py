@@ -1,5 +1,5 @@
 """Initialization for the CLI module."""
 
-from .main import launch
+from .main import cli, launch, summarize
 
-__all__ = ["launch"]
+__all__ = ["cli", "summarize", "launch"]

@@ -364,3 +364,13 @@ def pretty_datetime(dt) -> str:
     Returns a pretty string representation of the specified datetime object.
     """
     return dt.strftime("%Y-%m-%d %H:%M")
+
+
+def save_json_file(data: dict, file_path: Union[str, Path]):
+    """
+    Saves the specified data as a JSON file at the specified file path.
+    """
+    path = Path(file_path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with open(path, "w") as f:
+        json.dump(data, f, indent=4)

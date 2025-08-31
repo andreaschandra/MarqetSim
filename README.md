@@ -64,6 +64,11 @@ uv pip install -e .
 run sample experiment
 
 ```
-marq agents/situations/test-situation-1.yaml
+marq launch test/projects_config/market-insights-ai-num-agents.yaml
 
+```
+
+check summarize results
+```
+marq summarize test-results/config-name/test.csv
 ```
