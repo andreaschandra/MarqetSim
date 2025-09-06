@@ -5,7 +5,7 @@ import logging
 import os
 import re
 
-from anthropic import Anthropic
+from anthropic import Anthropic, NOT_GIVEN
 from pydantic import BaseModel
 
 logger = logging.getLogger("marqetsim")
@@ -23,17 +23,20 @@ class AnthropicAPIClient:
         )
         self.response = None
 
-    def send_message(self, message, response_format):
+    def send_message(
+        self,
+        messages,
+        system_message: str = NOT_GIVEN,
+    ):
         """
         Simulate sending a message to Claude and receiving a response.
         In a real implementation, this would interact with the Claude API.
         """
 
-        response_format = response_format.model_json_schema()
-
         raw_response = self.client.messages.create(
+            system=system_message,
+            messages=messages,
             max_tokens=1024,
-            messages=message,
             model="claude-3-5-haiku-latest",
         )
 
@@ -76,9 +79,7 @@ if __name__ == "__main__":
         condition: str
 
     client = AnthropicAPIClient()
-    response = client.send_message(
-        "What is the weather like today in Jakarta?", response_format=ResponseFormat
-    )
+    response = client.send_message("What is the weather like today in Jakarta?")
     print(f"Response text: {response}")
     print(f"Date: {response['content']['date']}")
     print(f"Condition: {response['content']['condition']}")

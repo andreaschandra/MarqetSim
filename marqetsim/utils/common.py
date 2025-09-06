@@ -64,7 +64,8 @@ def extract_json(text: str) -> dict:
         # return the parsed JSON object
         return json.loads(text)
 
-    except Exception:
+    except Exception as e:
+        logger.warning(f"Failed to extract JSON from text: {e}")
         return {}
 
 

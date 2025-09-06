@@ -1,17 +1,21 @@
 """Answer extractor to structured form."""
+
+from pathlib import Path
+
 import chevron
-from llm.anthropic import AnthropicAPIClient
-from utils import common
+
+from marqetsim.llm.anthropic import AnthropicAPIClient
+from marqetsim.utils import common
+
 
 def extract_results_from_agents(
-    self,
     agents,
     extraction_objective: str = None,
     situation: str = None,
     fields: list = None,
     fields_hints: dict = None,
     verbose: bool = None,
-    logger = None
+    logger=None,
 ):
     """
     Extracts results from a list of TinyPerson instances.
@@ -29,22 +33,28 @@ def extract_results_from_agents(
     """
     results = []
     for agent in agents:
-        result = self.extract_results_from_agent(
-            agent, extraction_objective, situation, fields, fields_hints, verbose, logger
+        result = extract_results_from_agent(
+            agent,
+            extraction_objective,
+            situation,
+            fields,
+            fields_hints,
+            verbose,
+            logger,
         )
         results.append(result)
 
     return results
 
+
 def extract_results_from_agent(
-    self,
-    tinyperson,
+    agent,
     extraction_objective: str = "The main points present in the agent's interactions history.",
     situation: str = "",
     fields: list = None,
     fields_hints: dict = None,
     verbose: bool = None,
-    logger,
+    logger=None,
 ):
     """
     Extracts results from a TinyPerson instance.
@@ -61,10 +71,10 @@ def extract_results_from_agent(
 
     client = AnthropicAPIClient()
 
-    extraction_objective, situation, fields, fields_hints, verbose = (
-        self._get_default_values_if_necessary(
-            extraction_objective, situation, fields, fields_hints, verbose
-        )
+    extractor_prompt_path = (
+        Path(__file__).parent.parent
+        / "prompts"
+        / "interaction_results_extractor.mustache"
     )
 
     messages = []
@@ -76,24 +86,12 @@ def extract_results_from_agent(
     if fields_hints is not None:
         rendering_configs["fields_hints"] = list(fields_hints.items())
 
-    messages.append(
-        {
-            "role": "system",
-            "content": chevron.render(
-                open(
-                    self._extraction_prompt_template_path,
-                    "r",
-                    encoding="utf-8",
-                    errors="replace",
-                ).read(),
-                rendering_configs,
-            ),
-        }
+    content = chevron.render(
+        open(extractor_prompt_path, "r", encoding="utf-8", errors="replace").read(),
+        rendering_configs,
     )
 
-    interaction_history = tinyperson.pretty_current_interactions(
-        max_content_length=None
-    )
+    interaction_history = agent.episodic_memory.retrieve()
 
     extraction_request_prompt = f"""
         ## Extraction objective
@@ -101,7 +99,7 @@ def extract_results_from_agent(
         {extraction_objective}
 
         ## Situation
-        You are considering a single agent, named {tinyperson.name}. Your objective thus refers to this agent specifically.
+        You are considering a single agent, named {agent.name}. Your objective thus refers to this agent specifically.
         {situation}
 
         ## Agent Interactions History
@@ -113,21 +111,18 @@ def extract_results_from_agent(
         """
     messages.append({"role": "user", "content": extraction_request_prompt})
 
-    next_message = client.send_message(
-        messages, temperature=0.0, frequency_penalty=0.0, presence_penalty=0.0
-    )
+    next_message = client.send_message(messages=messages, system_message=content)
 
     debug_msg = f"Extraction raw result message: {next_message}"
     logger.debug(debug_msg)
     if verbose:
         print(debug_msg)
 
-    if next_message is not None:
+    if (next_message is not None) & isinstance(next_message, str):
         result = common.extract_json(next_message["content"])
+    elif isinstance(next_message, dict):
+        result = next_message.get("content", None)
     else:
         result = None
-
-    # cache the result
-    self.agent_extraction[tinyperson.name] = result
 
     return result
