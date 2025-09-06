@@ -86,10 +86,10 @@ def extract_results_from_agent(
     if fields_hints is not None:
         rendering_configs["fields_hints"] = list(fields_hints.items())
 
-    content = chevron.render(
-        open(extractor_prompt_path, "r", encoding="utf-8", errors="replace").read(),
-        rendering_configs,
-    )
+    with open(extractor_prompt_path, "r", encoding="utf-8", errors="replace") as f:
+        extract_prompt_content = f.read()
+
+    content = chevron.render(extract_prompt_content, rendering_configs)
 
     interaction_history = agent.episodic_memory.retrieve()
 

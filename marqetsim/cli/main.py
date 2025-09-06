@@ -1,12 +1,12 @@
 """Cli Function"""
 
 from pathlib import Path
+from pprint import pprint
 
 import click
 import pandas as pd
 from rich.console import Console
 from rich.table import Table
-from pprint import pprint
 
 from marqetsim.agent import (
     create_joe_the_analyst,

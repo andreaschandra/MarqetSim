@@ -5,7 +5,7 @@ import logging
 import os
 import re
 
-from anthropic import Anthropic, NOT_GIVEN
+from anthropic import NOT_GIVEN, Anthropic
 from pydantic import BaseModel
 
 logger = logging.getLogger("marqetsim")

@@ -373,5 +373,5 @@ def save_json_file(data: dict, file_path: Union[str, Path]):
     """
     path = Path(file_path)
     path.parent.mkdir(parents=True, exist_ok=True)
-    with open(path, "w") as f:
+    with open(path, mode="w", encoding="utf-8") as f:
         json.dump(data, f, indent=4)
