@@ -64,7 +64,8 @@ def extract_json(text: str) -> dict:
         # return the parsed JSON object
         return json.loads(text)
 
-    except Exception:
+    except Exception as e:
+        logger.warning(f"Failed to extract JSON from text: {e}")
         return {}
 
 
@@ -372,5 +373,5 @@ def save_json_file(data: dict, file_path: Union[str, Path]):
     """
     path = Path(file_path)
     path.parent.mkdir(parents=True, exist_ok=True)
-    with open(path, "w") as f:
+    with open(path, mode="w", encoding="utf-8") as f:
         json.dump(data, f, indent=4)

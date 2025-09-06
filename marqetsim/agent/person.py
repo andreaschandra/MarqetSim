@@ -35,7 +35,7 @@ class Person:
     def __init__(self, name, logger=LogCreator("marqetsim", level="DEBUG")):
         self.name = name
         self._configuration = {"persona": {}}
-        self._init_system_message = None
+        self.system_message = ""
         self.current_messages = []
         self._mental_faculties = []
         self._displayed_communications_buffer = []
@@ -267,9 +267,7 @@ class Person:
                 messages, response_format=CognitiveActionModel
             )
         elif self.default["LLM_TYPE"] == "Anthropic":
-            next_message = self.anthropic_client.send_message(
-                messages, response_format=CognitiveActionModel
-            )
+            next_message = self.anthropic_client.send_message(messages)
         else:
             support_types = "Supported types are: Ollama, OpenAI, Anthropic."
             raise ValueError(
@@ -287,12 +285,12 @@ class Person:
         self.logger.debug(
             ">>>>>============= generate_agent_system_prompt() ============="
         )
-        self._init_system_message = self.generate_agent_system_prompt()
-        self.logger.debug("init_system_message: %s", self._init_system_message)
+        self.system_message = self.generate_agent_system_prompt()
+        self.logger.debug("system_message: %s", self.system_message)
 
         # reset system message
         self.logger.debug(">>>>>=== reset_prompt: set self.current_messages ====")
-        self.current_messages = [{"role": "user", "content": self._init_system_message}]
+        self.current_messages = [{"role": "user", "content": self.system_message}]
 
         # sets up the actual interaction messages to use for prompting
         self.logger.debug(
@@ -608,7 +606,10 @@ class EpisodicMemory(TinyMemory):
         return len(self.memory)
 
     def retrieve(
-        self, first_n: int, last_n: int, include_omission_info: bool = True
+        self,
+        first_n: int = None,
+        last_n: int = None,
+        include_omission_info: bool = True,
     ) -> list:
         """
         Retrieves the first n and/or last n values from memory. If n is None, all values are retrieved.

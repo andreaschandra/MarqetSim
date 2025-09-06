@@ -1,6 +1,7 @@
 """Cli Function"""
 
 from pathlib import Path
+from pprint import pprint
 
 import click
 import pandas as pd
@@ -13,6 +14,7 @@ from marqetsim.agent import (
     generate_coherent_person,
 )
 from marqetsim.utils import LogCreator, common
+from marqetsim.utils.extractor import extract_results_from_agent
 
 
 @click.group()
@@ -67,6 +69,14 @@ def launch(file_path):
         for person in people:
             person.set_context(situation)
             all_response[person.name] = person.listen_and_act(request_msg)
+            result = extract_results_from_agent(
+                person,
+                situation=situation,
+                fields=["ad_number", "ad_title"],
+                verbose=False,
+                logger=logger,
+            )
+            pprint(result)
 
         # Save all responses to a json file in the same directory as the input file and with the same name plus "_responses.json"
         output_file_path = Path(file_path).with_name(
