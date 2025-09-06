@@ -13,6 +13,7 @@ from marqetsim.agent import (
     create_person,
     generate_coherent_person,
 )
+from marqetsim.config import read_config_file
 from marqetsim.utils import LogCreator, common
 from marqetsim.utils.extractor import extract_results_from_agent
 
@@ -29,6 +30,7 @@ def launch(file_path):
     """Read a YAML or JSON file and print it as a dictionary."""
 
     logger = LogCreator()
+    settings = read_config_file(logger=logger)
     try:
         data = common.read_yaml_file(file_path)
         situation = data.pop("situation")
@@ -38,7 +40,7 @@ def launch(file_path):
         people = []
         if "agent" not in data:
             print("agent is not defined, use predefined agent Joe the Analyst")
-            people = [create_joe_the_analyst()]
+            people = [create_joe_the_analyst(logger=logger)]
         else:
             if isinstance(data["agent"], dict):
                 one_person = create_person(profile=data.pop("agent"), logger=logger)
@@ -64,8 +66,10 @@ def launch(file_path):
         options_merged = [
             f"#option-{i+1} " + opt.pop("content") for i, opt in enumerate(options)
         ]
+
         request_msg = f"{questions}\n" + "\n\n".join(options_merged)
         all_response = {}
+
         for person in people:
             person.set_context(situation)
             all_response[person.name] = person.listen_and_act(request_msg)
@@ -74,6 +78,7 @@ def launch(file_path):
                 situation=situation,
                 fields=["ad_number", "ad_title"],
                 verbose=False,
+                settings=settings,
                 logger=logger,
             )
             pprint(result)

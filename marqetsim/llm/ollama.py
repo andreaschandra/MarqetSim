@@ -6,45 +6,44 @@ import json
 from ollama import Client
 from pydantic import BaseModel
 
-from marqetsim.utils.common import config
+from marqetsim.llm.base import LLMBase
+from marqetsim.utils import LogCreator
 
 
-class OllamaAPIClient:
+class OllamaAPIClient(LLMBase):
     """ollama client"""
 
-    def __init__(self):
-        self.default = None
+    def __init__(self, settings, logger=LogCreator()):
 
-        self.get_config()
-        self.client = Client(self.default["URL"])
+        self.settings = settings
+        self.client = Client(self.settings["Ollama"]["URL"])
+        self.logger = logger
+        self.settings = settings
 
-    def get_config(self):
-        """ollama config"""
-
-        default = {}
-        default["URL"] = config["Ollama"].get("URL", "localhost:11434")
-        default["MODEL"] = config["Ollama"].get("MODEL", "tinyllama")
-
-        self.default = default
-
-    def send_message(self, current_message=None, response_format=None):
+    def send_message(self, messages, system_message, response_format=None):
         """
-        Sends a POST request with the given data to the specified URL and streams the response.
-
+        Sends a chat message to the LLM client with the specified messages, system prompt, and response format.
         Args:
-            request_data (dict): The data to be sent as the request body.
-            endpoint_url (str): The endpoint URL.
-
+            messages (list): A list of message dictionaries, each containing 'role' and 'content' keys.
+            system_message (str): The system prompt to be included at the beginning of the conversation.
+            response_format: An object specifying the expected response format, with a `model_json_schema()` method.
         Returns:
-            list: A list of decoded JSON objects from the response.
+            dict: A dictionary containing the 'role' and 'content' of the response message from the LLM.
+        Prints:
+            The raw response received from the LLM client for debugging purposes.
         """
 
-        messages = current_message
-        model = self.default["MODEL"]
-        response_format_dict = response_format.model_json_schema()
+        model = self.settings["Ollama"]["MODEL"]
+
+        if response_format:
+            response_format = response_format.model_json_schema()
+
+        if system_message:
+            message = [{"role": "system", "content": system_message}]
+            messages = message + messages
 
         response = self.client.chat(
-            messages=messages, model=model, format=response_format_dict
+            messages=messages, model=model, format=response_format
         )
         print(f"Raw response: {response}")
 
@@ -90,7 +89,11 @@ def main():
     ]
     response_format = Country
 
-    ollama = OllamaAPIClient()
+    settings = {}
+    settings["Ollama"] = {}
+    settings["Ollama"]["URL"] = "localhost:11434"
+    settings["Ollama"]["MODEL"] = "tinyllama"
+    ollama = OllamaAPIClient(settings)
 
     response = ollama.send_message(current_message, response_format)
     response_dict = json.loads(response["content"])

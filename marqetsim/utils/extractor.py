@@ -54,6 +54,7 @@ def extract_results_from_agent(
     fields: list = None,
     fields_hints: dict = None,
     verbose: bool = None,
+    settings=None,
     logger=None,
 ):
     """
@@ -69,7 +70,7 @@ def extract_results_from_agent(
         verbose (bool, optional): Whether to print debug messages. Defaults to False.
     """
 
-    client = AnthropicAPIClient()
+    client = AnthropicAPIClient(settings=settings)
 
     extractor_prompt_path = (
         Path(__file__).parent.parent

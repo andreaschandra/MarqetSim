@@ -453,7 +453,8 @@ disable=raw-checker-failed,
         too-many-instance-attributes,
         too-many-positional-arguments,
         too-many-return-statements,
-        abstract-method
+        too-many-branches,
+        abstract-method,
         
         
 # Enable the message, report, category or checker with the given id(s). You can

@@ -1,6 +1,5 @@
 """Agent utilities."""
 
-import configparser
 import copy
 import csv
 import json
@@ -162,59 +161,7 @@ def repeat_on_error(retries: int, exceptions: list):
     return decorator
 
 
-_CONFIG = None
-
-
-def read_config_file(use_cache=True, verbose=True) -> configparser.ConfigParser:
-    """read config file."""
-    global _CONFIG
-    if use_cache and _CONFIG is not None:
-        # if we have a cached config and accept that, return it
-        return _CONFIG
-
-    else:
-        config = configparser.ConfigParser()
-
-        # Read the default values in the module directory.
-        config_file_path = (
-            Path(__file__).parent.parent.absolute() / "settings" / "config.ini"
-        )
-        if verbose:
-            print(f"Looking for default config on: {config_file_path}")
-
-        if config_file_path.exists():
-            config.read(config_file_path)
-            _CONFIG = config
-        else:
-            raise ValueError(f"Failed to find default config on: {config_file_path}")
-
-        # Now, let's override any specific default value, if there's a custom .ini config.
-        # Try the directory of the current main program
-        config_file_path = Path.cwd() / "config.ini"
-        if config_file_path.exists():
-
-            if verbose:
-                print(f"Found custom config on: {config_file_path}")
-
-            config.read(
-                config_file_path
-            )  # this only overrides the values that are present in the custom config
-            _CONFIG = config
-            return config
-        else:
-            if verbose:
-                logger.warning(f"Failed to find custom config on: {config_file_path}")
-                logger.warning(
-                    "Will use only default values. IF THINGS FAIL, TRY CUSTOMIZING MODEL, API TYPE, etc."
-                )
-
-        return config
-
-
-config = read_config_file()
-
-
-def add_rai_template_variables_if_enabled(template_variables: dict) -> dict:
+def add_rai_template_variables_if_enabled(settings, template_variables: dict) -> dict:
     """
     Adds the RAI template variables to the specified dictionary, if the RAI disclaimers are enabled.
     These can be configured in the config.ini file. If enabled, the variables will then load the RAI disclaimers from the
@@ -227,10 +174,10 @@ def add_rai_template_variables_if_enabled(template_variables: dict) -> dict:
         dict: The updated dictionary of template variables.
     """
 
-    rai_harmful_content_prevention = config["Simulation"].getboolean(
+    rai_harmful_content_prevention = settings["Simulation"].getboolean(
         "RAI_HARMFUL_CONTENT_PREVENTION", True
     )
-    rai_copyright_infringement_prevention = config["Simulation"].getboolean(
+    rai_copyright_infringement_prevention = settings["Simulation"].getboolean(
         "RAI_COPYRIGHT_INFRINGEMENT_PREVENTION", True
     )
 

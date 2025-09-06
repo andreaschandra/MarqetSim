@@ -13,13 +13,11 @@ import rich
 from llama_index.core import SimpleDirectoryReader
 from llama_index.readers.web import SimpleWebPageReader
 
-from marqetsim import config
+from marqetsim.config import read_config_file
 from marqetsim.environment import Environment
-from marqetsim.llm.anthropic import AnthropicAPIClient
-from marqetsim.llm.ollama import OllamaAPIClient
-from marqetsim.llm.openai import OpenAIClient
+from marqetsim.llm.manager import get_llm
 from marqetsim.memory.rag import MarqKnowledge
-from marqetsim.schema.schema import CognitiveActionModel, TinyMemory
+from marqetsim.schema.schema import TinyMemory
 from marqetsim.utils import common
 from marqetsim.utils.common import break_text_at_length, repeat_on_error
 from marqetsim.utils.logger import LogCreator
@@ -41,11 +39,7 @@ class Person:
         self._displayed_communications_buffer = []
         self.logger = logger
 
-        # default
-        self.default = {}
-        self.default["max_content_display_length"] = 1024
-        self.default["LLM_TYPE"] = config["Simulation"].get("LLM_TYPE", "Ollama")
-        self.logger.info(f"Default config: {self.default}")
+        self.settings = read_config_file(logger=logger)
 
         # The list of actions that this agent has performed so far, but which have not been
         # consumed by the environment yet.
@@ -64,8 +58,7 @@ class Person:
         self.semantic_memory = SemanticMemory(name="marq-knowledge")
 
         # LLM Provider
-        self.ollama_client = OllamaAPIClient()
-        self.anthropic_client = AnthropicAPIClient()
+        self.llm_client = get_llm(self.settings)
 
     def define(self, key, value):
         """Define Person attributes."""
@@ -246,33 +239,11 @@ class Person:
             for msg in self.current_messages
         ]
 
-        llm_type = self.default["LLM_TYPE"]
+        llm_type = self.settings["Simulation"]["LLM_TYPE"]
         self.logger.debug(f"[{self.name}] Sending messages to {llm_type}\n")
         self.logger.debug(f"[{self.name}] Messages: {messages} \n\n")
 
-        if self.default["LLM_TYPE"] == "Ollama":
-            self.logger.debug(
-                ">>>>============= ollama_client.send_message() ============="
-            )
-            next_message = self.ollama_client.send_message(
-                messages, response_format=CognitiveActionModel
-            )
-        elif self.default["LLM_TYPE"] == "OpenAI":
-            self.logger.debug(
-                ">>>>============= openai_client.send_message() ============="
-            )
-
-            openai_client = OpenAIClient()
-            next_message = openai_client.send_message(
-                messages, response_format=CognitiveActionModel
-            )
-        elif self.default["LLM_TYPE"] == "Anthropic":
-            next_message = self.anthropic_client.send_message(messages)
-        else:
-            support_types = "Supported types are: Ollama, OpenAI, Anthropic."
-            raise ValueError(
-                f"Unknown LLM type: {self.default['LLM_TYPE']}. {support_types}"
-            )
+        next_message = self.llm_client.send_message(messages)
 
         self.logger.debug(f"[{self.name}] Received message: {next_message}\n\n")
 
@@ -326,7 +297,7 @@ class Person:
 
         # RAI prompt components, if requested
         template_variables = common.add_rai_template_variables_if_enabled(
-            template_variables
+            self.settings, template_variables
         )
 
         return chevron.render(agent_prompt_template, template_variables)
@@ -492,7 +463,9 @@ class Person:
                 msg_simplified_type = stimus["type"]
                 msg_simplified_content = break_text_at_length(
                     stimus["content"],
-                    max_length=self.default.get("max_content_display_length", 1024),
+                    max_length=int(
+                        self.settings["General"].get("max_content_display_length", 1024)
+                    ),
                 )
 
                 indent = " " * len(msg_simplified_actor) + "      > "
@@ -527,7 +500,9 @@ class Person:
             msg_simplified_type = content["action"]["type"]
             msg_simplified_content = break_text_at_length(
                 content["action"].get("content", ""),
-                max_length=self.default.get("max_content_display_length", 1024),
+                max_length=int(
+                    self.settings["General"].get("max_content_display_length", 1024)
+                ),
             )
 
             indent = " " * len(msg_simplified_actor) + "      > "
