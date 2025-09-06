@@ -5,13 +5,14 @@ import sys
 
 from marqetsim.agent.person import Person
 from marqetsim.utils.logger import LogCreator
+from marqetsim.config import read_config_file
 
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 
-def create_joe_the_analyst(logger=None):
+def create_joe_the_analyst(settings, logger=None):
     """Create a Joe the Analyst agent."""
-    person = Person("Joe", logger=logger)
+    person = Person("Joe", settings, logger=logger)
     person.define("age", "35")
     person.define("nationality", "American")
     person.define("country_of_residence", "USA")
@@ -77,6 +78,7 @@ def create_joe_the_analyst(logger=None):
 
 if __name__ == "__main__":
     logger = LogCreator("examples", level="DEBUG")
+    settings = read_config_file(logger=logger)
 
     # Example usage
     joe = create_joe_the_analyst(logger=logger)
