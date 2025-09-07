@@ -64,6 +64,23 @@ class AnthropicAPIClient(LLMBase):
                     ]
             except Exception as e:
                 self.logger.error(f"Error parsing response: {e} \n Text: {text}")
+                self.logger.debug("Sending to llm to fix the json")
+                try:
+                    message = [
+                        {
+                            "role": "user",
+                            "content": f"Fix this json: \n{text} \nmake sure the json is valid",
+                        }
+                    ]
+                    next_message = self.client.messages.create(
+                        messages=message,
+                        max_tokens=1024,
+                        model="claude-3-5-haiku-latest",
+                    )
+                    response_json = json.loads(next_message["content"], strict=False)
+                except Exception as e:
+                    self.logger.debug(f"Failed to fix json. Error: {e}")
+                    response_json = {"role": "assistant", "content": []}
 
         self.response = {"role": raw_response.role, "content": response_json}
 

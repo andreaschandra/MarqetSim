@@ -16,7 +16,7 @@ major_version_zero = true
 
 [project]
 name = "marqetsim"
-version = "0.1.2"
+version = "1.0.0"
 authors = [
     { name = "Andreas Chandra", email = "andreas@jakartaresearch.com" }
 ]
