@@ -47,7 +47,7 @@ class Person:
         self._configuration["current_datetime"] = self.iso_datetime()
 
         # Memory
-        self.episodic_memory = EpisodicMemory(name=name)
+        self.episodic_memory = EpisodicMemory()
         self.semantic_memory = SemanticMemory(name="marq-knowledge")
 
         # LLM Provider

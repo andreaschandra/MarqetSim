@@ -22,18 +22,15 @@ class SemanticMemory(TinyMemory):
     of semantic memory, where the agent can store and retrieve semantic information.
     """
 
-    suppress_attributes_from_serialization = ["index"]
-
     def __init__(
         self,
         documents_paths: list = None,
         web_urls: list = None,
-        based_knowledge=None,
+        knowledge_base=None,
         name=None,
         persistent_path=None,
     ) -> None:
-        super().__init__(name=name)
-        self.based_knowledge = based_knowledge or MarqKnowledge(
+        self.knowledge_base = knowledge_base or MarqKnowledge(
             collection_name=name, persist_directory=persistent_path
         )
 
@@ -71,13 +68,13 @@ class SemanticMemory(TinyMemory):
     def _store(self, value: Any) -> None:
         engram_text = str(value)
         doc_id = str(uuid.uuid4())
-        self.based_knowledge.add_document(engram_text, doc_id)
+        self.knowledge_base.add_document(engram_text, doc_id)
 
     def retrieve_relevant(self, relevance_target: str, top_k=20) -> list:
         """
         Retrieves all values from memory that are relevant to a given target.
         """
-        results = self.based_knowledge.retrieve(relevance_target, top_k)
+        results = self.knowledge_base.retrieve(relevance_target, top_k)
 
         retrieved = []
         for doc, meta, dist in zip(
@@ -140,7 +137,7 @@ class SemanticMemory(TinyMemory):
             doc_id = str(uuid.uuid4())
             file_name = doc.metadata.get("file_name", "unknown")
             self.filename_to_document[file_name] = doc
-            self.based_knowledge.add_document(
+            self.knowledge_base.add_document(
                 sanitized_text, doc_id, {"file_name": file_name}
             )
 
@@ -167,7 +164,7 @@ class SemanticMemory(TinyMemory):
         for doc in documents:
             doc.text = common.sanitize_raw_string(doc.text)
             doc_id = str(uuid.uuid4())
-            self.based_knowledge.add_document(doc.text, doc_id, {"source": "web"})
+            self.knowledge_base.add_document(doc.text, doc_id, {"source": "web"})
 
     def _add_documents(self, new_documents, doc_to_name_func=None) -> list:
         """
@@ -193,7 +190,7 @@ class SemanticMemory(TinyMemory):
         doc_id = str(uuid.uuid4())
 
         # Add to vector DB
-        self.based_knowledge.add_document(
+        self.knowledge_base.add_document(
             document.text, doc_id, metadata={"file_name": name}
         )
 
@@ -207,17 +204,8 @@ class SemanticMemory(TinyMemory):
     def _post_deserialization_init(self):
 
         # Reset or recreate MarqKnowledge instance if needed
-        self.based_knowledge = MarqKnowledge()
+        self.knowledge_base = MarqKnowledge()
 
         # Reload documents and web URLs into MarqKnowledge
         self.add_documents_paths(self.documents_paths)
         self.add_web_urls(self.documents_web_urls)
-
-    def actions_constraints_prompt(self):
-        return None
-
-    def actions_definitions_prompt(self):
-        return None
-
-    def process_action(self, agent, action):
-        return None

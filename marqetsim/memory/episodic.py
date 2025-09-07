@@ -22,22 +22,7 @@ class EpisodicMemory(TinyMemory):
         "simulation_timestamp": None,
     }
 
-    def __init__(
-        self,
-        name: str = "agent",
-        fixed_prefix_length: int = 100,
-        lookback_length: int = 100,
-    ) -> None:
-        """
-        Initializes the memory.
-
-        Args:
-            fixed_prefix_length (int): The fixed prefix length. Defaults to 20.
-            lookback_length (int): The lookback length. Defaults to 20.
-        """
-        super().__init__(name=name)
-        self.fixed_prefix_length = fixed_prefix_length
-        self.lookback_length = lookback_length
+    def __init__(self):
 
         self.memory = []
 
@@ -52,6 +37,26 @@ class EpisodicMemory(TinyMemory):
         Returns the number of values in memory.
         """
         return len(self.memory)
+
+    def _retrieve_first(self, n: int, include_omission_info: bool = True) -> list:
+        """
+        Retrieves the first n values from memory.
+        """
+        omisssion_info = (
+            [EpisodicMemory.MEMORY_BLOCK_OMISSION_INFO] if include_omission_info else []
+        )
+
+        return self.memory[:n] + omisssion_info
+
+    def _retrieve_last(self, n: int, include_omission_info: bool = True) -> list:
+        """
+        Retrieves the last n values from memory.
+        """
+        omisssion_info = (
+            [EpisodicMemory.MEMORY_BLOCK_OMISSION_INFO] if include_omission_info else []
+        )
+
+        return omisssion_info + self.memory[-n:]
 
     def retrieve(
         self,
@@ -79,38 +84,23 @@ class EpisodicMemory(TinyMemory):
         # use the other methods in the class to implement
         if first_n is not None and last_n is not None:
             return (
-                self.retrieve_first(first_n)
+                self._retrieve_first(first_n)
                 + omisssion_info
-                + self.retrieve_last(last_n)
+                + self._retrieve_last(last_n)
             )
         elif first_n is not None:
-            return self.retrieve_first(first_n)
+            return self._retrieve_first(first_n)
         elif last_n is not None:
-            return self.retrieve_last(last_n)
+            return self._retrieve_last(last_n)
         else:
             return self.retrieve_all()
 
-    def retrieve_recent(self, include_omission_info: bool = True) -> list:
+    def retrieve_recent(self, n=5) -> list:
         """
         Retrieves the n most recent values from memory.
         """
-        omisssion_info = (
-            [EpisodicMemory.MEMORY_BLOCK_OMISSION_INFO] if include_omission_info else []
-        )
 
-        # compute fixed prefix
-        fixed_prefix = self.memory[: self.fixed_prefix_length] + omisssion_info
-
-        # how many lookback values remain?
-        remaining_lookback = min(
-            len(self.memory) - len(fixed_prefix), self.lookback_length
-        )
-
-        # compute the remaining lookback values and return the concatenation
-        if remaining_lookback <= 0:
-            return fixed_prefix
-        else:
-            return fixed_prefix + self.memory[-remaining_lookback:]
+        return self._retrieve_last(n=n)
 
     def retrieve_all(self) -> list:
         """
@@ -123,23 +113,3 @@ class EpisodicMemory(TinyMemory):
         Retrieves top-k values from memory that are most relevant to a given target.
         """
         raise NotImplementedError("Subclasses must implement this method.")
-
-    def retrieve_first(self, n: int, include_omission_info: bool = True) -> list:
-        """
-        Retrieves the first n values from memory.
-        """
-        omisssion_info = (
-            [EpisodicMemory.MEMORY_BLOCK_OMISSION_INFO] if include_omission_info else []
-        )
-
-        return self.memory[:n] + omisssion_info
-
-    def retrieve_last(self, n: int, include_omission_info: bool = True) -> list:
-        """
-        Retrieves the last n values from memory.
-        """
-        omisssion_info = (
-            [EpisodicMemory.MEMORY_BLOCK_OMISSION_INFO] if include_omission_info else []
-        )
-
-        return omisssion_info + self.memory[-n:]

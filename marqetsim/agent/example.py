@@ -81,7 +81,7 @@ if __name__ == "__main__":
     settings = read_config_file(logger=logger)
 
     # Example usage
-    joe = create_joe_the_analyst(logger=logger)
+    joe = create_joe_the_analyst(settings, logger=logger)
     # logger.info(f"Created agent: {joe._configuration}") --> should not be accessed
 
     joe.set_context(
