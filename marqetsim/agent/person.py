@@ -22,7 +22,7 @@ class Person:
 
     PP_TEXT_WIDTH = 100
     MAX_ACTIONS_BEFORE_DONE = 15
-    communication_display: bool = True
+    communication_display: bool = False
 
     def __init__(self, name, settings, logger=LogCreator("marqetsim", level="DEBUG")):
         self.name = name
@@ -33,6 +33,7 @@ class Person:
         self._displayed_communications_buffer = []
         self.logger = logger
         self.settings = settings
+        self.api_call_count = 0
 
         # The list of actions that this agent has performed so far, but which have not been
         # consumed by the environment yet.
@@ -59,6 +60,11 @@ class Person:
             self._configuration["persona"][key] = textwrap.dedent(value)
         else:
             self._configuration["persona"][key] = value
+
+    def get_persona(self):
+        """Get the persona of the Person."""
+
+        return self._configuration["persona"]
 
     def set_context(self, context):
         """Set the context for the Person."""
@@ -214,7 +220,9 @@ class Person:
                     break
 
             self.logger.debug(">>============= aux_act_once() =============")
+
             aux_act_once()
+            return
 
         if return_actions:
             return contents
@@ -237,6 +245,7 @@ class Person:
         self.logger.debug(f"[{self.name}] Messages: {messages} \n\n")
 
         next_message = self.llm_client.send_message(messages)
+        self.api_call_count += 1
 
         self.logger.debug(f"[{self.name}] Received message: {next_message}\n\n")
 

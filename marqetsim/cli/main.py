@@ -1,12 +1,14 @@
 """CLI Function"""
 
+import time
 from pathlib import Path
-from pprint import pprint
 from typing import Any, Dict, List, Union
 
 import click
 import pandas as pd
+from rich.align import Align
 from rich.console import Console
+from rich.panel import Panel
 from rich.table import Table
 
 from marqetsim.agent import (
@@ -14,9 +16,11 @@ from marqetsim.agent import (
     create_person,
     generate_coherent_person,
 )
-from marqetsim.config import read_config_file
+from marqetsim.config import read_config_file, activate_dotenv
 from marqetsim.utils import LogCreator, common
 from marqetsim.utils.extractor import extract_results_from_agent
+
+console = Console()
 
 
 def create_agents_from_dict(
@@ -85,6 +89,42 @@ def save_responses(responses: Dict[str, Any], input_file_path: str) -> str:
     return str(output_file_path)
 
 
+def welcome():
+    """Welcome message."""
+
+    welcome_path = Path(__file__).parent / "static" / "welcome.txt"
+    with open(welcome_path, mode="r", encoding="utf-8") as f:
+        welcome_ascii = f.read()
+
+    # Create welcome box content
+    welcome_content = f"{welcome_ascii}\n"
+    welcome_content += "[bold green]MarqetSim: Multi-Agents LLM Market Research Simulation - CLI[/bold green]\n\n"
+    welcome_content += "[dim]Built by [AI Team research](https://github.com/andreaschandra/MarqetSim)[/dim]"
+
+    welcome_box = Panel(
+        welcome_content,
+        border_style="green",
+        padding=(1, 2),
+        title="Welcome to MarqetSim",
+        subtitle="Multi-Agents LLM Market Research Simulation",
+    )
+    console.print(Align.center(welcome_box))
+    console.print()
+
+
+def summary(stats):
+    """Summary message."""
+    table = Table(title="Report Summary")
+    table.add_column("# of Agents", justify="center")
+    table.add_column("Duration", justify="center")
+    table.add_column("API Calls", justify="center")
+
+    table.add_row(
+        str(stats["num_agents"]), str(stats["duration"]), str(stats["api_calls"])
+    )
+    console.print(table)
+
+
 @click.group()
 def cli():
     """Marq CLI tool."""
@@ -95,8 +135,16 @@ def cli():
 @click.argument("file_path", type=click.Path(exists=True))
 def launch(file_path: str) -> None:
     """Read a YAML or JSON file and execute agent interactions."""
-    logger = LogCreator()
-    settings = read_config_file(logger=logger)
+    start = time.time()
+
+    settings = read_config_file()
+    logger = LogCreator(
+        log_file="marqetsim_cli.log",
+        level=settings["Logging"]["LOGLEVEL"],
+    )
+    activate_dotenv(logger)
+
+    welcome()
 
     try:
         data = common.read_yaml_file(file_path)
@@ -123,7 +171,11 @@ def launch(file_path: str) -> None:
         all_responses = {}
         for person in people:
             person.set_context(situation)
-            all_responses[person.name] = person.listen_and_act(request_msg)
+            all_responses[person.name] = {}
+            all_responses[person.name]["interaction"] = person.listen_and_act(
+                request_msg
+            )
+            all_responses[person.name]["profile"] = person.get_persona()
 
             result = extract_results_from_agent(
                 person,
@@ -133,12 +185,18 @@ def launch(file_path: str) -> None:
                 settings=settings,
                 logger=logger,
             )
-            pprint(result)
+            all_responses[person.name]["result"] = result
 
         # Save responses
         output_path = save_responses(all_responses, file_path)
-        click.echo(f"Responses saved to {output_path}")
 
+        stats = {}
+        stats["num_agents"] = len(people)
+        stats["duration"] = round(time.time() - start, 2)
+        stats["api_calls"] = sum(person.api_call_count for person in people)
+        summary(stats)
+
+        click.echo(f"Responses saved to {output_path}")
     except FileNotFoundError as e:
         click.echo(f"File error: {e}", err=True)
     except ValueError as e:
@@ -178,7 +236,6 @@ def summarize(file_path: str) -> None:
             table.add_row(str(label), str(count), bar_text)
 
         console.print(table)
-
     except pd.errors.EmptyDataError:
         click.echo("Error: CSV file is empty", err=True)
     except pd.errors.ParserError as e:

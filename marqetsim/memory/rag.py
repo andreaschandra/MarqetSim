@@ -57,6 +57,7 @@ class MarqKnowledge:
         Retrieves relevant documents based on a query.
         """
         query_embedding = self.embedding_fn([query])[0]
+
         results = self.collection.query(
             query_embeddings=[query_embedding],
             n_results=top_k,

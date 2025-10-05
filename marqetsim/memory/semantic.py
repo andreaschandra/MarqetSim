@@ -77,6 +77,8 @@ class SemanticMemory(TinyMemory):
         results = self.knowledge_base.retrieve(relevance_target, top_k)
 
         retrieved = []
+        return retrieved
+
         for doc, meta, dist in zip(
             results["documents"][0], results["metadatas"][0], results["distances"][0]
         ):

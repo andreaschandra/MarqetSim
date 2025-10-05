@@ -49,7 +49,7 @@ def extract_results_from_agents(
 
 def extract_results_from_agent(
     agent,
-    extraction_objective: str = "The main points present in the agent's interactions history.",
+    extraction_objective: str = "The selected option present in the agent's interactions history.",
     situation: str = "",
     fields: list = None,
     fields_hints: dict = None,

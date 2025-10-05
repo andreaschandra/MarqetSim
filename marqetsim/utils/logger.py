@@ -1,6 +1,7 @@
 """Logger utility for MarqetSim."""
 
 import re
+import logging
 from logging import Formatter, Logger, StreamHandler, handlers
 from pathlib import Path
 
@@ -38,8 +39,11 @@ class RecordFormater(Formatter):
 class LogCreator(Logger):
     """Log Creator that sets logging with color formatting and file output."""
 
-    def __init__(self, name: str = "marqetsim", level="INFO", log_file: Path = None):
-        super().__init__(name, level)
+    def __init__(
+        self, name: str = "marqetsim", level=logging.INFO, log_file: Path = None
+    ):
+        # super().__init__(name, level)
+        super().__init__(name)
 
         log_format = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 
@@ -47,6 +51,7 @@ class LogCreator(Logger):
         if not any(isinstance(handler, StreamHandler) for handler in self.handlers):
             console_handler = StreamHandler()
             console_handler.setFormatter(ColorFormatter(log_format))
+            console_handler.setLevel(level)
             self.addHandler(console_handler)
 
         if log_file:
@@ -64,11 +69,12 @@ class LogCreator(Logger):
                     encoding="utf-8",
                 )
                 file_handler.setFormatter(RecordFormater(log_format))
+                file_handler.setLevel(logging.DEBUG)
                 self.addHandler(file_handler)
 
 
 if __name__ == "__main__":
-    logger = LogCreator("test_logger", level="DEBUG")
+    logger = LogCreator("test_logger", level="DEBUG", log_file=".test.log")
 
     logger.info("This is an info message.")
     logger.warning("This is a warning message.")
